@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { MoreHorizontal, Pencil, Trash2, Calendar, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { MoreHorizontal, Pencil, Trash2, Calendar, Plus, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -305,7 +305,7 @@ export function TaskTable({
             )}
             {columnVisibility.dueDate && (
               <TableHead 
-                className="w-[140px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                className="w-[160px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("dueDate")}
               >
                 <div className="flex items-center">
@@ -316,7 +316,7 @@ export function TaskTable({
             )}
             {columnVisibility.status && (
               <TableHead 
-                className="w-[140px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                className="w-[130px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("status")}
               >
                 <div className="flex items-center">
@@ -327,7 +327,7 @@ export function TaskTable({
             )}
             {columnVisibility.priority && (
               <TableHead 
-                className="w-[140px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                className="w-[120px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("priority")}
               >
                 <div className="flex items-center">
@@ -362,8 +362,8 @@ export function TaskTable({
               )}
               {showProject && (
                 <TableCell className="py-3">
-                  <Select value={quickAddProjectId} onValueChange={setQuickAddProjectId}>
-                    <SelectTrigger className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 text-muted-foreground">
+                  <Select value={quickAddProjectId || undefined} onValueChange={setQuickAddProjectId}>
+                    <SelectTrigger className="h-auto w-auto min-w-0 text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 [&>span]:text-muted-foreground">
                       <SelectValue placeholder="Project" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -377,28 +377,36 @@ export function TaskTable({
                 </TableCell>
               )}
               {columnVisibility.dueDate && (
-                <TableCell className="py-3 text-muted-foreground text-sm">
+                <TableCell className="py-3">
                   {quickAddDueDate ? (
-                    <Input
-                      type="date"
-                      value={quickAddDueDate}
-                      onChange={(e) => setQuickAddDueDate(e.target.value)}
-                      className="h-auto w-[130px] text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0"
-                    />
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="date"
+                        value={quickAddDueDate}
+                        onChange={(e) => setQuickAddDueDate(e.target.value)}
+                        className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0"
+                      />
+                    </div>
                   ) : (
-                    <Input
-                      type="date"
-                      value=""
-                      onChange={(e) => setQuickAddDueDate(e.target.value)}
-                      className="h-auto w-[130px] text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0 text-muted-foreground"
-                    />
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        value=""
+                        onChange={(e) => setQuickAddDueDate(e.target.value)}
+                        className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0 opacity-0 absolute inset-0 cursor-pointer"
+                      />
+                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                        Due Date
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                      </span>
+                    </div>
                   )}
                 </TableCell>
               )}
               {columnVisibility.status && (
                 <TableCell className="py-3">
-                  <Select value={quickAddStatus} onValueChange={(v) => setQuickAddStatus(v as TaskStatus)}>
-                    <SelectTrigger className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 text-muted-foreground">
+                  <Select value={quickAddStatus || undefined} onValueChange={(v) => setQuickAddStatus(v as TaskStatus)}>
+                    <SelectTrigger className="h-auto w-auto min-w-0 text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 [&>span]:text-muted-foreground">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -413,8 +421,8 @@ export function TaskTable({
               )}
               {columnVisibility.priority && (
                 <TableCell className="py-3">
-                  <Select value={quickAddPriority} onValueChange={(v) => setQuickAddPriority(v as TaskPriority)}>
-                    <SelectTrigger className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 text-muted-foreground">
+                  <Select value={quickAddPriority || undefined} onValueChange={(v) => setQuickAddPriority(v as TaskPriority)}>
+                    <SelectTrigger className="h-auto w-auto min-w-0 text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 [&>span]:text-muted-foreground">
                       <SelectValue placeholder="Priority" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -520,7 +528,7 @@ export function TaskTable({
                         type="date"
                         value={task.due_date || ""}
                         onChange={(e) => handleInlineDueDateChange(task.id, e.target.value)}
-                        className="h-8 w-[140px] text-sm px-2 border-transparent bg-transparent hover:border-border focus:border-border"
+                        className="h-8 w-[130px] text-sm px-2 border-transparent bg-transparent hover:border-border focus:border-border"
                       />
                     ) : (
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -537,13 +545,13 @@ export function TaskTable({
                         value={task.status} 
                         onValueChange={(v) => handleInlineStatusChange(task.id, v as TaskStatus)}
                       >
-                        <SelectTrigger className="h-8 w-[120px] text-sm border-transparent bg-transparent hover:border-border">
+                        <SelectTrigger className="h-8 w-auto text-sm border-transparent bg-transparent hover:border-border">
                           <TaskStatusBadge status={task.status} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border border-border shadow-md z-50">
                           {TASK_STATUSES.map((status) => (
                             <SelectItem key={status} value={status}>
-                              {status}
+                              {status === "Todo" ? "To do" : status}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -560,7 +568,7 @@ export function TaskTable({
                         value={task.priority} 
                         onValueChange={(v) => handleInlinePriorityChange(task.id, v as TaskPriority)}
                       >
-                        <SelectTrigger className="h-8 w-[130px] text-sm border-transparent bg-transparent hover:border-border">
+                        <SelectTrigger className="h-8 w-auto text-sm border-transparent bg-transparent hover:border-border">
                           <TaskPriorityBadge priority={task.priority} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border border-border shadow-md z-50">
