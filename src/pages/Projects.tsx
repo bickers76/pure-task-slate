@@ -91,7 +91,7 @@ export default function Projects() {
         }
       />
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="mx-auto max-w-5xl p-6">
+        <div className="p-6">
           {isLoading ? (
             <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
               Loading...
@@ -101,7 +101,7 @@ export default function Projects() {
               <p>No projects yet. Create your first project to get started.</p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-3 max-w-md">
               {projects.map((project) => (
                 <Card key={project.id} className="group relative p-4">
                   <div className="absolute right-2 top-2">
