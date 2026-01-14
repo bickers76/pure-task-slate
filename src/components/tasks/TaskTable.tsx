@@ -274,13 +274,25 @@ export function TaskTable({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
-      <Table>
+      <Table className="table-fixed">
+        <colgroup>
+          <col className="w-[52px]" />
+          <col className="w-[100px]" />
+          {columnVisibility.title && <col />}
+          {showProject && <col className="w-[160px]" />}
+          {columnVisibility.dueDate && <col className="w-[160px]" />}
+          {columnVisibility.status && <col className="w-[130px]" />}
+          {columnVisibility.priority && <col className="w-[120px]" />}
+          <col className="w-[52px]" />
+        </colgroup>
         <TableHeader>
           <TableRow className="bg-muted/30 hover:bg-muted/30">
-            <TableHead className="w-[40px] pl-4">
-              <Checkbox className="opacity-50" disabled />
+            <TableHead className="pl-4">
+              <div className="w-4 h-4 flex items-center justify-center">
+                <Checkbox className="opacity-50" disabled />
+              </div>
             </TableHead>
-            <TableHead className="w-[100px] text-muted-foreground font-medium">Task</TableHead>
+            <TableHead className="text-muted-foreground font-medium">Task</TableHead>
             {columnVisibility.title && (
               <TableHead 
                 className="text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
@@ -305,7 +317,7 @@ export function TaskTable({
             )}
             {columnVisibility.dueDate && (
               <TableHead 
-                className="w-[160px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                className="text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("dueDate")}
               >
                 <div className="flex items-center">
@@ -316,7 +328,7 @@ export function TaskTable({
             )}
             {columnVisibility.status && (
               <TableHead 
-                className="w-[130px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                className="text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("status")}
               >
                 <div className="flex items-center">
@@ -327,7 +339,7 @@ export function TaskTable({
             )}
             {columnVisibility.priority && (
               <TableHead 
-                className="w-[120px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                className="text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("priority")}
               >
                 <div className="flex items-center">
@@ -336,7 +348,7 @@ export function TaskTable({
                 </div>
               </TableHead>
             )}
-            <TableHead className="w-[44px]"></TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -464,7 +476,7 @@ export function TaskTable({
 
             return (
               <TableRow key={task.id} className="group border-b border-border/50">
-                <TableCell className="pl-4 w-[40px]">
+                <TableCell className="pl-4">
                   <div className="w-4 h-4 flex items-center justify-center">
                     <Checkbox 
                       checked={isDone}
