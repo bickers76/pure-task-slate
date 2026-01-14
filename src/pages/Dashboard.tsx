@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export default function Dashboard() {
+function DashboardContent() {
   const { openMobileMenu } = useAppShell();
   const isMobile = useIsMobile();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
@@ -176,7 +176,7 @@ export default function Dashboard() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         <div className="space-y-6 p-6 lg:p-8">
           {/* Header */}
@@ -281,6 +281,14 @@ export default function Dashboard() {
         onSave={handleSaveTask}
         defaultStatus={kanbanAddStatus}
       />
+    </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <AppShell>
+      <DashboardContent />
     </AppShell>
   );
 }
