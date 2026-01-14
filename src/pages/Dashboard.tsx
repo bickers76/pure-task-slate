@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { TaskFilters, ViewMode, ColumnVisibility } from "@/components/tasks/TaskFilters";
 import { TaskTable } from "@/components/tasks/TaskTable";
@@ -139,6 +139,26 @@ export default function Dashboard() {
     }
   };
 
+  const handleQuickAddTask = async (title: string) => {
+    if (projects.length === 0) {
+      toast.error("Create a project first");
+      return;
+    }
+    try {
+      await createTaskMutation.mutateAsync({
+        project_id: projects[0].id,
+        title,
+        description: null,
+        status: "Backlog",
+        priority: "Medium",
+        due_date: null,
+      });
+      toast.success("Task created");
+    } catch {
+      toast.error("Failed to create task");
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -177,12 +197,6 @@ export default function Dashboard() {
               onAddTask={handleKanbanAddTask}
               onReorder={handleReorderTasks}
             />
-          ) : activeTasks.length === 0 ? (
-            <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-              {projects.length === 0
-                ? "No tasks yet. Create your first project to get started."
-                : "No tasks match your filters."}
-            </div>
           ) : (
             <TaskTable
               tasks={activeTasks}
@@ -190,8 +204,16 @@ export default function Dashboard() {
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
               onComplete={handleCompleteTask}
+              onQuickAdd={projects.length > 0 ? handleQuickAddTask : undefined}
               columnVisibility={columnVisibility}
             />
+          )}
+
+          {/* Empty state when no tasks and no projects */}
+          {viewMode === "list" && activeTasks.length === 0 && projects.length === 0 && !tasksLoading && !projectsLoading && (
+            <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+              No tasks yet. Create your first project to get started.
+            </div>
           )}
 
           {/* Done Tasks Section (Collapsed) - Only show in list view */}

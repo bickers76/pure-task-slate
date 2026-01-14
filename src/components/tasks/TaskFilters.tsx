@@ -1,4 +1,4 @@
-import { Search, CirclePlus, SlidersHorizontal, LayoutList, Kanban, Check } from "lucide-react";
+import { Search, CirclePlus, SlidersHorizontal, LayoutList, Kanban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,7 +6,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -146,6 +145,12 @@ export function TaskFilters({
               Title
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
+              checked={columnVisibility.dueDate}
+              onCheckedChange={() => handleColumnToggle("dueDate")}
+            >
+              Due Date
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
               checked={columnVisibility.status}
               onCheckedChange={() => handleColumnToggle("status")}
             >
@@ -156,12 +161,6 @@ export function TaskFilters({
               onCheckedChange={() => handleColumnToggle("priority")}
             >
               Priority
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={columnVisibility.dueDate}
-              onCheckedChange={() => handleColumnToggle("dueDate")}
-            >
-              Due Date
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
