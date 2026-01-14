@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -21,6 +21,8 @@ import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ColumnVisibility } from "./TaskFilters";
+import { format, differenceInDays, parseISO, isValid } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -45,13 +47,47 @@ function getTypeBadgeVariant(type: string): "default" | "secondary" | "outline" 
   return "outline";
 }
 
+// Get due date styling based on how soon/overdue it is
+function getDueDateStyle(dueDate: string | null): { className: string; label: string } {
+  if (!dueDate) {
+    return { className: "text-muted-foreground", label: "—" };
+  }
+
+  const date = parseISO(dueDate);
+  if (!isValid(date)) {
+    return { className: "text-muted-foreground", label: "—" };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysUntilDue = differenceInDays(date, today);
+
+  let className = "text-muted-foreground";
+  
+  if (daysUntilDue < 0) {
+    // Overdue - red
+    className = "text-destructive font-medium";
+  } else if (daysUntilDue === 0) {
+    // Due today - orange
+    className = "text-primary font-medium";
+  } else if (daysUntilDue <= 3) {
+    // Due in 1-3 days - amber/warning
+    className = "text-amber-600 dark:text-amber-500";
+  } else if (daysUntilDue <= 7) {
+    // Due in a week - subtle warning
+    className = "text-amber-500/80 dark:text-amber-400/80";
+  }
+
+  return { className, label: format(date, "MMM d, yyyy") };
+}
+
 export function TaskTable({ 
   tasks, 
   showProject = false, 
   onEdit, 
   onDelete,
   onComplete,
-  columnVisibility = { title: true, status: true, priority: true },
+  columnVisibility = { title: true, status: true, priority: true, dueDate: true },
 }: TaskTableProps) {
   if (tasks.length === 0) {
     return (
@@ -80,6 +116,9 @@ export function TaskTable({
             {columnVisibility.priority && (
               <TableHead className="w-[100px] text-muted-foreground font-medium">Priority</TableHead>
             )}
+            {columnVisibility.dueDate && (
+              <TableHead className="w-[120px] text-muted-foreground font-medium">Due Date</TableHead>
+            )}
             <TableHead className="w-[44px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -87,6 +126,7 @@ export function TaskTable({
           {tasks.map((task) => {
             const taskType = task.tags?.[0];
             const isDone = task.status === "Done";
+            const dueDateStyle = getDueDateStyle(task.due_date);
             return (
               <TableRow key={task.id} className="group border-b border-border/50">
                 <TableCell className="pl-4">
@@ -135,6 +175,14 @@ export function TaskTable({
                 {columnVisibility.priority && (
                   <TableCell>
                     <TaskPriorityBadge priority={task.priority} />
+                  </TableCell>
+                )}
+                {columnVisibility.dueDate && (
+                  <TableCell>
+                    <div className={cn("flex items-center gap-1.5 text-sm", dueDateStyle.className)}>
+                      {task.due_date && <Calendar className="h-3.5 w-3.5" />}
+                      <span>{dueDateStyle.label}</span>
+                    </div>
                   </TableCell>
                 )}
                 <TableCell className="pr-4">

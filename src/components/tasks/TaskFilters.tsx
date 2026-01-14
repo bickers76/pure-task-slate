@@ -24,6 +24,7 @@ export interface ColumnVisibility {
   title: boolean;
   status: boolean;
   priority: boolean;
+  dueDate: boolean;
 }
 
 interface TaskFiltersProps {
@@ -50,7 +51,7 @@ export function TaskFilters({
   onAddTask,
   viewMode = "list",
   onViewModeChange,
-  columnVisibility = { title: true, status: true, priority: true },
+  columnVisibility = { title: true, status: true, priority: true, dueDate: true },
   onColumnVisibilityChange,
 }: TaskFiltersProps) {
   const handleColumnToggle = (column: keyof ColumnVisibility) => {
@@ -156,10 +157,16 @@ export function TaskFilters({
             >
               Priority
             </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={columnVisibility.dueDate}
+              onCheckedChange={() => handleColumnToggle("dueDate")}
+            >
+              Due Date
+            </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button 
+        <Button
           size="sm" 
           className="h-9 gap-2 bg-foreground text-background hover:bg-primary hover:text-primary-foreground" 
           onClick={onAddTask}

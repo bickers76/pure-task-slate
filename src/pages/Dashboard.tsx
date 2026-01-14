@@ -37,6 +37,7 @@ export default function Dashboard() {
     title: true,
     status: true,
     priority: true,
+    dueDate: true,
   });
   const [kanbanAddStatus, setKanbanAddStatus] = useState<TaskStatus | null>(null);
 
