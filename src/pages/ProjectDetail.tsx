@@ -1,11 +1,10 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Plus, List, Kanban, ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronDown } from "lucide-react";
 import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaskFilters, ColumnVisibility } from "@/components/tasks/TaskFilters";
+import { TaskFilters, ColumnVisibility, ViewMode } from "@/components/tasks/TaskFilters";
 import { TaskTable } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
@@ -27,7 +26,7 @@ import { Task, TaskStatus, TaskPriority, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "list" | "kanban";
+
 
 function ProjectDetailContent() {
   const { openMobileMenu } = useAppShell();
@@ -204,22 +203,6 @@ function ProjectDetailContent() {
       <TopBar
         onMenuClick={openMobileMenu}
         title={project.name}
-        actions={
-          <div className="flex items-center gap-3">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-              <TabsList className="h-8">
-                <TabsTrigger value="list" className="gap-1.5 px-3 text-xs">
-                  <List className="h-3.5 w-3.5" />
-                  List
-                </TabsTrigger>
-                <TabsTrigger value="kanban" className="gap-1.5 px-3 text-xs">
-                  <Kanban className="h-3.5 w-3.5" />
-                  Board
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        }
       />
 
       <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-6 py-2">
@@ -246,6 +229,8 @@ function ProjectDetailContent() {
                 priorityFilter={priorityFilter}
                 onPriorityFilterChange={setPriorityFilter}
                 onAddTask={() => handleAddTask()}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={setColumnVisibility}
               />
