@@ -1,0 +1,201 @@
+import { useState, useMemo } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
+import { Task, TaskStatus, TASK_STATUSES } from "@/types";
+import { KanbanColumn } from "./KanbanColumn";
+import { KanbanCard } from "./KanbanCard";
+
+interface KanbanBoardProps {
+  tasks: Task[];
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
+  onAddTask: (status: TaskStatus) => void;
+  onReorder: (updates: { id: string; sort_order: number; status?: TaskStatus }[]) => void;
+}
+
+export function KanbanBoard({
+  tasks,
+  onEdit,
+  onDelete,
+  onAddTask,
+  onReorder,
+}: KanbanBoardProps) {
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [doneCollapsed, setDoneCollapsed] = useState(true);
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+
+  // Update local tasks when props change
+  useMemo(() => {
+    if (!activeTask) {
+      setLocalTasks(tasks);
+    }
+  }, [tasks, activeTask]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const tasksByStatus = useMemo(() => {
+    const grouped: Record<TaskStatus, Task[]> = {
+      Backlog: [],
+      Todo: [],
+      "In Progress": [],
+      Done: [],
+      Canceled: [],
+    };
+    localTasks.forEach((task) => {
+      grouped[task.status].push(task);
+    });
+    // Sort by sort_order within each status
+    Object.keys(grouped).forEach((status) => {
+      grouped[status as TaskStatus].sort((a, b) => a.sort_order - b.sort_order);
+    });
+    return grouped;
+  }, [localTasks]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = localTasks.find((t) => t.id === event.active.id);
+    if (task) {
+      setActiveTask(task);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeTask = localTasks.find((t) => t.id === activeId);
+    if (!activeTask) return;
+
+    // Check if dropping over a column
+    const isOverColumn = TASK_STATUSES.includes(overId as TaskStatus);
+    const newStatus = isOverColumn
+      ? (overId as TaskStatus)
+      : localTasks.find((t) => t.id === overId)?.status;
+
+    if (newStatus && newStatus !== activeTask.status) {
+      setLocalTasks((prev) => {
+        return prev.map((t) =>
+          t.id === activeId ? { ...t, status: newStatus } : t
+        );
+      });
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveTask(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeTask = localTasks.find((t) => t.id === activeId);
+    if (!activeTask) return;
+
+    // Determine target status
+    const isOverColumn = TASK_STATUSES.includes(overId as TaskStatus);
+    const targetStatus = isOverColumn
+      ? (overId as TaskStatus)
+      : localTasks.find((t) => t.id === overId)?.status || activeTask.status;
+
+    // Get tasks in target status
+    const targetTasks = localTasks
+      .filter((t) => t.status === targetStatus && t.id !== activeId)
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    // Find insertion index
+    let newIndex = targetTasks.length;
+    if (!isOverColumn) {
+      const overIndex = targetTasks.findIndex((t) => t.id === overId);
+      if (overIndex !== -1) {
+        newIndex = overIndex;
+      }
+    }
+
+    // Insert active task at new position
+    const reorderedTasks = [...targetTasks];
+    reorderedTasks.splice(newIndex, 0, { ...activeTask, status: targetStatus });
+
+    // Generate updates
+    const updates = reorderedTasks.map((task, index) => ({
+      id: task.id,
+      sort_order: index,
+      status: targetStatus,
+    }));
+
+    // Update local state
+    setLocalTasks((prev) => {
+      const otherTasks = prev.filter(
+        (t) => t.status !== targetStatus && t.id !== activeId
+      );
+      return [
+        ...otherTasks,
+        ...reorderedTasks.map((t, i) => ({ ...t, sort_order: i })),
+      ];
+    });
+
+    // Persist changes
+    onReorder(updates);
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex h-full gap-4 overflow-x-auto p-4 scrollbar-thin">
+        {TASK_STATUSES.filter((s) => s !== "Done").map((status) => (
+          <KanbanColumn
+            key={status}
+            status={status}
+            tasks={tasksByStatus[status]}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddTask={onAddTask}
+          />
+        ))}
+        <KanbanColumn
+          status="Done"
+          tasks={tasksByStatus.Done}
+          isCollapsed={doneCollapsed}
+          onToggleCollapse={() => setDoneCollapsed(!doneCollapsed)}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </div>
+      <DragOverlay>
+        {activeTask && (
+          <div className="opacity-90">
+            <KanbanCard
+              task={activeTask}
+              onEdit={() => {}}
+              onDelete={() => {}}
+            />
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
+  );
+}
