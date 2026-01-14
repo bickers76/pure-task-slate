@@ -203,7 +203,7 @@ export function TaskTable({
                     type="date"
                     value={quickAddDueDate}
                     onChange={(e) => setQuickAddDueDate(e.target.value)}
-                    className="h-8 w-[130px] text-sm"
+                    className="h-8 w-[140px] text-sm px-2"
                   />
                 </TableCell>
               )}
@@ -239,17 +239,7 @@ export function TaskTable({
                   </Select>
                 </TableCell>
               )}
-              <TableCell className="pr-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 text-xs"
-                  onClick={handleQuickAddSubmit}
-                  disabled={!quickAddTitle.trim()}
-                >
-                  Add
-                </Button>
-              </TableCell>
+              <TableCell className="pr-4"></TableCell>
             </TableRow>
           )}
 
