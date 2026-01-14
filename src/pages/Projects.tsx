@@ -87,7 +87,7 @@ export default function Projects() {
           <div className="flex flex-col gap-3 max-w-md">
             <Button 
               size="sm" 
-              className="gap-2 w-fit" 
+              className="gap-2 w-fit bg-foreground text-background hover:bg-primary hover:text-primary-foreground" 
               onClick={() => handleOpenDialog()}
             >
               <Plus className="h-4 w-4" />
