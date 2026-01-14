@@ -55,17 +55,15 @@ export const tasksRepo = {
   },
 
   async create(input: CreateTaskInput): Promise<Task> {
-    // Get max sort_order for the status
-    const { data: maxOrderData } = await supabase
+    // Get min sort_order to place new task at the top
+    const { data: minOrderData } = await supabase
       .from("tasks")
       .select("sort_order")
-      .eq("project_id", input.project_id)
-      .eq("status", input.status || "Backlog")
-      .order("sort_order", { ascending: false })
+      .order("sort_order", { ascending: true })
       .limit(1);
 
-    const nextSortOrder = maxOrderData && maxOrderData.length > 0 
-      ? maxOrderData[0].sort_order + 1 
+    const nextSortOrder = minOrderData && minOrderData.length > 0 
+      ? minOrderData[0].sort_order - 1 
       : 0;
 
     const { data, error } = await supabase

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { TaskFilters, ViewMode, ColumnVisibility } from "@/components/tasks/TaskFilters";
-import { TaskTable } from "@/components/tasks/TaskTable";
+import { TaskTable, QuickAddData } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { Button } from "@/components/ui/button";
@@ -139,7 +139,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleQuickAddTask = async (title: string) => {
+  const handleQuickAddTask = async (data: QuickAddData) => {
     if (projects.length === 0) {
       toast.error("Create a project first");
       return;
@@ -147,11 +147,11 @@ export default function Dashboard() {
     try {
       await createTaskMutation.mutateAsync({
         project_id: projects[0].id,
-        title,
+        title: data.title,
         description: null,
-        status: "Backlog",
-        priority: "Medium",
-        due_date: null,
+        status: data.status,
+        priority: data.priority,
+        due_date: data.due_date,
       });
       toast.success("Task created");
     } catch {
