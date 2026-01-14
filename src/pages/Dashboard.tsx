@@ -130,7 +130,7 @@ export default function Dashboard() {
         }
       />
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="mx-auto max-w-5xl space-y-8 p-6">
+        <div className="space-y-8 p-6 lg:p-8">
           {/* Stats Grid */}
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
