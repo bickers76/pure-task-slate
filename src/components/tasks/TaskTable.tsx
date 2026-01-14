@@ -522,16 +522,18 @@ export function TaskTable({
                   </TableCell>
                 )}
                 {columnVisibility.dueDate && (
-                  <TableCell className="-ml-2">
+                  <TableCell>
                     {onInlineEdit ? (
-                      <Input
-                        type="date"
-                        value={task.due_date || ""}
-                        onChange={(e) => handleInlineDueDateChange(task.id, e.target.value)}
-                        className="h-8 w-[130px] text-sm px-0 border-transparent bg-transparent hover:border-border focus:border-border"
-                      />
+                      <div className="-ml-1">
+                        <Input
+                          type="date"
+                          value={task.due_date || ""}
+                          onChange={(e) => handleInlineDueDateChange(task.id, e.target.value)}
+                          className="h-8 w-[130px] text-sm px-0 border-transparent bg-transparent hover:border-border focus:border-border"
+                        />
+                      </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground -ml-1">
                         {task.due_date && <Calendar className="h-3.5 w-3.5" />}
                         <span>{formatDueDate(task.due_date)}</span>
                       </div>
