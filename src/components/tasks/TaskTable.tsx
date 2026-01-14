@@ -384,29 +384,18 @@ export function TaskTable({
               )}
               {columnVisibility.dueDate && (
                 <TableCell className="py-3 pl-4">
-                  {quickAddDueDate ? (
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="date"
-                        value={quickAddDueDate}
-                        onChange={(e) => setQuickAddDueDate(e.target.value)}
-                        className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0"
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <Input
-                        type="date"
-                        value=""
-                        onChange={(e) => setQuickAddDueDate(e.target.value)}
-                        className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0 opacity-0 absolute inset-0 cursor-pointer"
-                      />
-                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                        Due Date
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="date"
+                      value={quickAddDueDate}
+                      onChange={(e) => setQuickAddDueDate(e.target.value)}
+                      onKeyDown={handleQuickAddKeyDown}
+                      className={cn(
+                        "h-auto w-[130px] text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0 cursor-pointer",
+                        !quickAddDueDate && "text-muted-foreground"
+                      )}
+                    />
+                  </div>
                 </TableCell>
               )}
               {columnVisibility.status && (
