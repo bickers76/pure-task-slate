@@ -10,6 +10,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -17,14 +24,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Task } from "@/types";
+import { Task, TaskStatus, TaskPriority, TASK_STATUSES, TASK_PRIORITIES } from "@/types";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ColumnVisibility } from "./TaskFilters";
 import { format, parseISO, isValid } from "date-fns";
-import { cn } from "@/lib/utils";
+
+export interface QuickAddData {
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  due_date: string | null;
+}
 
 interface TaskTableProps {
   tasks: Task[];
@@ -32,7 +45,7 @@ interface TaskTableProps {
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
   onComplete?: (task: Task) => void;
-  onQuickAdd?: (title: string) => void;
+  onQuickAdd?: (data: QuickAddData) => void;
   columnVisibility?: ColumnVisibility;
 }
 
@@ -70,12 +83,23 @@ export function TaskTable({
   columnVisibility = { title: true, status: true, priority: true, dueDate: true },
 }: TaskTableProps) {
   const [quickAddTitle, setQuickAddTitle] = useState("");
-  const [isQuickAddFocused, setIsQuickAddFocused] = useState(false);
+  const [quickAddStatus, setQuickAddStatus] = useState<TaskStatus>("Backlog");
+  const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>("Medium");
+  const [quickAddDueDate, setQuickAddDueDate] = useState("");
 
   const handleQuickAddSubmit = () => {
     if (quickAddTitle.trim() && onQuickAdd) {
-      onQuickAdd(quickAddTitle.trim());
+      onQuickAdd({
+        title: quickAddTitle.trim(),
+        status: quickAddStatus,
+        priority: quickAddPriority,
+        due_date: quickAddDueDate || null,
+      });
+      // Reset form
       setQuickAddTitle("");
+      setQuickAddStatus("Backlog");
+      setQuickAddPriority("Medium");
+      setQuickAddDueDate("");
     }
   };
 
@@ -85,7 +109,9 @@ export function TaskTable({
       handleQuickAddSubmit();
     } else if (e.key === "Escape") {
       setQuickAddTitle("");
-      setIsQuickAddFocused(false);
+      setQuickAddStatus("Backlog");
+      setQuickAddPriority("Medium");
+      setQuickAddDueDate("");
     }
   };
 
@@ -111,13 +137,13 @@ export function TaskTable({
             )}
             {showProject && <TableHead className="text-muted-foreground font-medium">Project</TableHead>}
             {columnVisibility.dueDate && (
-              <TableHead className="w-[120px] text-muted-foreground font-medium">Due Date</TableHead>
+              <TableHead className="w-[140px] text-muted-foreground font-medium">Due Date</TableHead>
             )}
             {columnVisibility.status && (
-              <TableHead className="w-[120px] text-muted-foreground font-medium">Status</TableHead>
+              <TableHead className="w-[140px] text-muted-foreground font-medium">Status</TableHead>
             )}
             {columnVisibility.priority && (
-              <TableHead className="w-[100px] text-muted-foreground font-medium">Priority</TableHead>
+              <TableHead className="w-[120px] text-muted-foreground font-medium">Priority</TableHead>
             )}
             <TableHead className="w-[44px]"></TableHead>
           </TableRow>
@@ -129,23 +155,74 @@ export function TaskTable({
               <TableCell className="pl-4">
                 <Plus className="h-4 w-4 text-muted-foreground" />
               </TableCell>
-              <TableCell colSpan={colCount - 2} className="py-2">
-                <Input
-                  placeholder="Add a task..."
-                  value={quickAddTitle}
-                  onChange={(e) => setQuickAddTitle(e.target.value)}
-                  onKeyDown={handleQuickAddKeyDown}
-                  onFocus={() => setIsQuickAddFocused(true)}
-                  onBlur={() => {
-                    setIsQuickAddFocused(false);
-                    if (quickAddTitle.trim()) {
-                      handleQuickAddSubmit();
-                    }
-                  }}
-                  className="h-8 border-none bg-transparent shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
-                />
+              <TableCell className="text-muted-foreground font-mono text-sm">
+                —
               </TableCell>
-              <TableCell></TableCell>
+              {columnVisibility.title && (
+                <TableCell className="py-2">
+                  <Input
+                    placeholder="Add a task..."
+                    value={quickAddTitle}
+                    onChange={(e) => setQuickAddTitle(e.target.value)}
+                    onKeyDown={handleQuickAddKeyDown}
+                    className="h-8 border-none bg-transparent shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
+                  />
+                </TableCell>
+              )}
+              {showProject && <TableCell>—</TableCell>}
+              {columnVisibility.dueDate && (
+                <TableCell className="py-2">
+                  <Input
+                    type="date"
+                    value={quickAddDueDate}
+                    onChange={(e) => setQuickAddDueDate(e.target.value)}
+                    className="h-8 w-[130px] text-sm"
+                  />
+                </TableCell>
+              )}
+              {columnVisibility.status && (
+                <TableCell className="py-2">
+                  <Select value={quickAddStatus} onValueChange={(v) => setQuickAddStatus(v as TaskStatus)}>
+                    <SelectTrigger className="h-8 w-[120px] text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TASK_STATUSES.filter(s => s !== "Done" && s !== "Canceled").map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              )}
+              {columnVisibility.priority && (
+                <TableCell className="py-2">
+                  <Select value={quickAddPriority} onValueChange={(v) => setQuickAddPriority(v as TaskPriority)}>
+                    <SelectTrigger className="h-8 w-[100px] text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TASK_PRIORITIES.map((priority) => (
+                        <SelectItem key={priority} value={priority}>
+                          {priority}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              )}
+              <TableCell className="pr-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={handleQuickAddSubmit}
+                  disabled={!quickAddTitle.trim()}
+                >
+                  Add
+                </Button>
+              </TableCell>
             </TableRow>
           )}
 
