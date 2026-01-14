@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Task, TaskStatus, TaskPriority, TASK_STATUSES, TASK_PRIORITIES } from "@/types";
+import { Task, TaskStatus, TaskPriority, TASK_STATUSES, TASK_PRIORITIES, Project } from "@/types";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { Link } from "react-router-dom";
@@ -33,6 +33,7 @@ import { ColumnVisibility } from "./TaskFilters";
 import { format, parseISO, isValid } from "date-fns";
 
 export interface QuickAddData {
+  project_id: string;
   title: string;
   status: TaskStatus;
   priority: TaskPriority;
@@ -41,6 +42,7 @@ export interface QuickAddData {
 
 interface TaskTableProps {
   tasks: Task[];
+  projects?: Project[];
   showProject?: boolean;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
@@ -75,6 +77,7 @@ function formatDueDate(dueDate: string | null): string {
 
 export function TaskTable({ 
   tasks, 
+  projects = [],
   showProject = false, 
   onEdit, 
   onDelete,
@@ -83,19 +86,28 @@ export function TaskTable({
   columnVisibility = { title: true, status: true, priority: true, dueDate: true },
 }: TaskTableProps) {
   const [quickAddTitle, setQuickAddTitle] = useState("");
+  const [quickAddProjectId, setQuickAddProjectId] = useState(projects[0]?.id || "");
   const [quickAddStatus, setQuickAddStatus] = useState<TaskStatus>("Backlog");
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>("Medium");
   const [quickAddDueDate, setQuickAddDueDate] = useState("");
 
+  // Update default project when projects change
+  useState(() => {
+    if (projects.length > 0 && !quickAddProjectId) {
+      setQuickAddProjectId(projects[0].id);
+    }
+  });
+
   const handleQuickAddSubmit = () => {
-    if (quickAddTitle.trim() && onQuickAdd) {
+    if (quickAddTitle.trim() && quickAddProjectId && onQuickAdd) {
       onQuickAdd({
+        project_id: quickAddProjectId,
         title: quickAddTitle.trim(),
         status: quickAddStatus,
         priority: quickAddPriority,
         due_date: quickAddDueDate || null,
       });
-      // Reset form
+      // Reset form but keep project selection
       setQuickAddTitle("");
       setQuickAddStatus("Backlog");
       setQuickAddPriority("Medium");
@@ -169,7 +181,22 @@ export function TaskTable({
                   />
                 </TableCell>
               )}
-              {showProject && <TableCell>—</TableCell>}
+              {showProject && (
+                <TableCell className="py-2">
+                  <Select value={quickAddProjectId} onValueChange={setQuickAddProjectId}>
+                    <SelectTrigger className="h-8 w-[130px] text-sm">
+                      <SelectValue placeholder="Project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              )}
               {columnVisibility.dueDate && (
                 <TableCell className="py-2">
                   <Input

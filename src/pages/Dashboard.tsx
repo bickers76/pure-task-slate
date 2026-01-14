@@ -140,13 +140,9 @@ export default function Dashboard() {
   };
 
   const handleQuickAddTask = async (data: QuickAddData) => {
-    if (projects.length === 0) {
-      toast.error("Create a project first");
-      return;
-    }
     try {
       await createTaskMutation.mutateAsync({
-        project_id: projects[0].id,
+        project_id: data.project_id,
         title: data.title,
         description: null,
         status: data.status,
@@ -200,6 +196,7 @@ export default function Dashboard() {
           ) : (
             <TaskTable
               tasks={activeTasks}
+              projects={projects}
               showProject
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
