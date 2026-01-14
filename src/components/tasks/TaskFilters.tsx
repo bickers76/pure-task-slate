@@ -86,6 +86,12 @@ export function TaskFilters({
             <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
+              checked={true}
+              disabled
+            >
+              Project
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
               checked={columnVisibility.title}
               onCheckedChange={() => handleColumnToggle("title")}
             >
