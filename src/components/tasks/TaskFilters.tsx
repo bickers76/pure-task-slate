@@ -78,7 +78,11 @@ export function TaskFilters({
           <SlidersHorizontal className="h-4 w-4" />
           View
         </Button>
-        <Button size="sm" className="h-9 gap-2" onClick={onAddTask}>
+        <Button 
+          size="sm" 
+          className="h-9 gap-2 bg-foreground text-background hover:bg-primary hover:text-primary-foreground" 
+          onClick={onAddTask}
+        >
           Add Task
         </Button>
       </div>
