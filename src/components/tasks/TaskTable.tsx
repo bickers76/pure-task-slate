@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { MoreHorizontal, Pencil, Trash2, Calendar, Plus, Check, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { MoreHorizontal, Pencil, Trash2, Calendar, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ColumnVisibility } from "./TaskFilters";
 import { format, parseISO, isValid } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export interface QuickAddData {
   project_id: string;
@@ -47,6 +48,9 @@ export interface InlineEditData {
   priority?: TaskPriority;
   due_date?: string | null;
 }
+
+type SortField = "title" | "project" | "dueDate" | "status" | "priority";
+type SortDirection = "asc" | "desc";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -84,6 +88,20 @@ function formatDueDate(dueDate: string | null): string {
   return format(date, "MMM d, yyyy");
 }
 
+// Status order for sorting
+const STATUS_ORDER: Record<TaskStatus, number> = {
+  "Todo": 0,
+  "In Progress": 1,
+  "Done": 2,
+};
+
+// Priority order for sorting
+const PRIORITY_ORDER: Record<TaskPriority, number> = {
+  "High": 0,
+  "Medium": 1,
+  "Low": 2,
+};
+
 export function TaskTable({ 
   tasks, 
   projects = [],
@@ -101,6 +119,10 @@ export function TaskTable({
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>("Medium");
   const [quickAddDueDate, setQuickAddDueDate] = useState("");
 
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
   // Inline editing state
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -112,6 +134,64 @@ export function TaskTable({
       setQuickAddProjectId(projects[0].id);
     }
   }, [projects, quickAddProjectId]);
+
+  // Sort tasks
+  const sortedTasks = useMemo(() => {
+    if (!sortField) return tasks;
+
+    return [...tasks].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case "title":
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case "project":
+          const projectA = a.project?.name || "";
+          const projectB = b.project?.name || "";
+          comparison = projectA.localeCompare(projectB);
+          break;
+        case "dueDate":
+          const dateA = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+          const dateB = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+          comparison = dateA - dateB;
+          break;
+        case "status":
+          comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+          break;
+        case "priority":
+          comparison = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+          break;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [tasks, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else {
+        // Reset sort
+        setSortField(null);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground/50" />;
+    }
+    if (sortDirection === "asc") {
+      return <ArrowUp className="ml-1 h-3.5 w-3.5" />;
+    }
+    return <ArrowDown className="ml-1 h-3.5 w-3.5" />;
+  };
 
   const handleQuickAddSubmit = () => {
     if (quickAddTitle.trim() && quickAddProjectId && onQuickAdd) {
@@ -207,17 +287,59 @@ export function TaskTable({
             </TableHead>
             <TableHead className="w-[100px] text-muted-foreground font-medium">Task</TableHead>
             {columnVisibility.title && (
-              <TableHead className="text-muted-foreground font-medium">Title</TableHead>
+              <TableHead 
+                className="text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => handleSort("title")}
+              >
+                <div className="flex items-center">
+                  Title
+                  <SortIcon field="title" />
+                </div>
+              </TableHead>
             )}
-            {showProject && <TableHead className="text-muted-foreground font-medium">Project</TableHead>}
+            {showProject && (
+              <TableHead 
+                className="text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => handleSort("project")}
+              >
+                <div className="flex items-center">
+                  Project
+                  <SortIcon field="project" />
+                </div>
+              </TableHead>
+            )}
             {columnVisibility.dueDate && (
-              <TableHead className="w-[140px] text-muted-foreground font-medium">Due Date</TableHead>
+              <TableHead 
+                className="w-[140px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => handleSort("dueDate")}
+              >
+                <div className="flex items-center">
+                  Due Date
+                  <SortIcon field="dueDate" />
+                </div>
+              </TableHead>
             )}
             {columnVisibility.status && (
-              <TableHead className="w-[140px] text-muted-foreground font-medium">Status</TableHead>
+              <TableHead 
+                className="w-[140px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center">
+                  Status
+                  <SortIcon field="status" />
+                </div>
+              </TableHead>
             )}
             {columnVisibility.priority && (
-              <TableHead className="w-[120px] text-muted-foreground font-medium">Priority</TableHead>
+              <TableHead 
+                className="w-[120px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => handleSort("priority")}
+              >
+                <div className="flex items-center">
+                  Priority
+                  <SortIcon field="priority" />
+                </div>
+              </TableHead>
             )}
             <TableHead className="w-[44px]"></TableHead>
           </TableRow>
@@ -226,30 +348,30 @@ export function TaskTable({
           {/* Inline Quick Add Row */}
           {onQuickAdd && (
             <TableRow className="border-b border-border/50 hover:bg-transparent">
-              <TableCell className="pl-4">
+              <TableCell className="pl-4 py-3">
                 <Plus className="h-4 w-4 text-muted-foreground" />
               </TableCell>
-              <TableCell className="text-muted-foreground font-mono text-sm">
+              <TableCell className="text-muted-foreground font-mono text-sm py-3">
                 —
               </TableCell>
               {columnVisibility.title && (
-                <TableCell className="py-2">
+                <TableCell className="py-3">
                   <Input
                     placeholder="Add a task..."
                     value={quickAddTitle}
                     onChange={(e) => setQuickAddTitle(e.target.value)}
                     onKeyDown={handleQuickAddKeyDown}
-                    className="h-8 border-none bg-transparent shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
+                    className="h-9 border border-border bg-background shadow-none focus-visible:ring-1 px-3 placeholder:text-muted-foreground/60"
                   />
                 </TableCell>
               )}
               {showProject && (
-                <TableCell className="py-2">
+                <TableCell className="py-3">
                   <Select value={quickAddProjectId} onValueChange={setQuickAddProjectId}>
-                    <SelectTrigger className="h-8 w-[130px] text-sm">
+                    <SelectTrigger className="h-9 w-[130px] text-sm border border-border bg-background">
                       <SelectValue placeholder="Project" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border border-border shadow-md z-50">
                       {projects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
@@ -260,22 +382,22 @@ export function TaskTable({
                 </TableCell>
               )}
               {columnVisibility.dueDate && (
-                <TableCell className="py-2">
+                <TableCell className="py-3">
                   <Input
                     type="date"
                     value={quickAddDueDate}
                     onChange={(e) => setQuickAddDueDate(e.target.value)}
-                    className="h-8 w-[140px] text-sm px-2"
+                    className="h-9 w-[140px] text-sm px-3 border border-border bg-background"
                   />
                 </TableCell>
               )}
               {columnVisibility.status && (
-                <TableCell className="py-2">
+                <TableCell className="py-3">
                   <Select value={quickAddStatus} onValueChange={(v) => setQuickAddStatus(v as TaskStatus)}>
-                    <SelectTrigger className="h-8 w-[120px] text-sm">
+                    <SelectTrigger className="h-9 w-[120px] text-sm border border-border bg-background">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border border-border shadow-md z-50">
                       {TASK_STATUSES.filter(s => s !== "Done").map((status) => (
                         <SelectItem key={status} value={status}>
                           {status}
@@ -286,12 +408,12 @@ export function TaskTable({
                 </TableCell>
               )}
               {columnVisibility.priority && (
-                <TableCell className="py-2">
+                <TableCell className="py-3">
                   <Select value={quickAddPriority} onValueChange={(v) => setQuickAddPriority(v as TaskPriority)}>
-                    <SelectTrigger className="h-8 w-[100px] text-sm">
+                    <SelectTrigger className="h-9 w-[100px] text-sm border border-border bg-background">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border border-border shadow-md z-50">
                       {TASK_PRIORITIES.map((priority) => (
                         <SelectItem key={priority} value={priority}>
                           {priority}
@@ -301,11 +423,11 @@ export function TaskTable({
                   </Select>
                 </TableCell>
               )}
-              <TableCell className="pr-4">
+              <TableCell className="pr-4 py-3">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 px-3 text-xs"
                   onClick={handleQuickAddSubmit}
                   disabled={!quickAddTitle.trim() || !quickAddProjectId}
                 >
@@ -315,7 +437,7 @@ export function TaskTable({
             </TableRow>
           )}
 
-          {tasks.length === 0 && !onQuickAdd && (
+          {sortedTasks.length === 0 && !onQuickAdd && (
             <TableRow>
               <TableCell colSpan={colCount} className="text-center py-8 text-muted-foreground">
                 No tasks to display.
@@ -323,7 +445,7 @@ export function TaskTable({
             </TableRow>
           )}
 
-          {tasks.map((task) => {
+          {sortedTasks.map((task) => {
             const taskType = task.tags?.[0];
             const isDone = task.status === "Done";
             const isEditingThisTask = editingTaskId === task.id;
@@ -354,7 +476,10 @@ export function TaskTable({
                       </div>
                     ) : (
                       <div 
-                        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 py-0.5"
+                        className={cn(
+                          "flex items-center gap-2 rounded px-1 -mx-1 py-0.5",
+                          onInlineEdit && "cursor-pointer hover:bg-muted/50"
+                        )}
                         onClick={() => onInlineEdit && startEditingTitle(task)}
                       >
                         {taskType && (
@@ -411,7 +536,7 @@ export function TaskTable({
                         <SelectTrigger className="h-8 w-[120px] text-sm border-transparent bg-transparent hover:border-border">
                           <TaskStatusBadge status={task.status} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-popover border border-border shadow-md z-50">
                           {TASK_STATUSES.map((status) => (
                             <SelectItem key={status} value={status}>
                               {status}
@@ -434,7 +559,7 @@ export function TaskTable({
                         <SelectTrigger className="h-8 w-[100px] text-sm border-transparent bg-transparent hover:border-border">
                           <TaskPriorityBadge priority={task.priority} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-popover border border-border shadow-md z-50">
                           {TASK_PRIORITIES.map((priority) => (
                             <SelectItem key={priority} value={priority}>
                               {priority}
@@ -458,7 +583,7 @@ export function TaskTable({
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="bg-popover border border-border shadow-md z-50">
                       <DropdownMenuItem onClick={() => onEdit?.(task)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
