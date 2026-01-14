@@ -246,7 +246,6 @@ function ProjectDetailContent() {
               </div>
             ) : (
               <>
-                {/* @ts-expect-error TaskTable props are inferred incorrectly in editor; runtime props are valid */}
                 <TaskTable
                   tasks={activeTasks}
                   projects={[project]}
@@ -285,7 +284,6 @@ function ProjectDetailContent() {
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-2">
-                  {/* @ts-expect-error TaskTable props are inferred incorrectly in editor; runtime props are valid */}
                   <TaskTable
                     tasks={doneTasks}
                     projects={[project]}
