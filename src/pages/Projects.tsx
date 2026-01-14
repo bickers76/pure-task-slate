@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, MoreHorizontal, Pencil, Trash2, FolderOpen } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function Projects() {
+  const { openMobileMenu } = useAppShell();
   const { data: projects = [], isLoading } = useProjects();
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
@@ -81,7 +82,7 @@ export default function Projects() {
 
   return (
     <AppShell>
-      <TopBar title="Projects" />
+      <TopBar title="Projects" onMenuClick={openMobileMenu} />
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         <div className="p-6">
           <div className="flex flex-col gap-3 max-w-md">
