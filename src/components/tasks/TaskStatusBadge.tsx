@@ -8,7 +8,7 @@ interface TaskStatusBadgeProps {
 
 const statusStyles: Record<TaskStatus, string> = {
   Todo: "bg-secondary text-secondary-foreground hover:bg-secondary",
-  "In Progress": "bg-primary/10 text-primary hover:bg-primary/10",
+  "In Progress": "bg-secondary text-secondary-foreground hover:bg-secondary",
   Done: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30",
 };
 

@@ -545,7 +545,7 @@ export function TaskTable({
                         value={task.status} 
                         onValueChange={(v) => handleInlineStatusChange(task.id, v as TaskStatus)}
                       >
-                        <SelectTrigger className="h-8 w-auto text-sm border-transparent bg-transparent hover:border-border">
+                        <SelectTrigger className="h-auto w-auto min-w-0 text-sm !border-0 bg-transparent hover:bg-muted/50 p-0.5 gap-1">
                           <TaskStatusBadge status={task.status} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -568,7 +568,7 @@ export function TaskTable({
                         value={task.priority} 
                         onValueChange={(v) => handleInlinePriorityChange(task.id, v as TaskPriority)}
                       >
-                        <SelectTrigger className="h-8 w-auto text-sm border-transparent bg-transparent hover:border-border">
+                        <SelectTrigger className="h-auto w-auto min-w-0 text-sm !border-0 bg-transparent hover:bg-muted/50 p-0.5 gap-1">
                           <TaskPriorityBadge priority={task.priority} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border border-border shadow-md z-50">
