@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     title: true,
+    project: true,
     status: true,
     priority: true,
     dueDate: true,
@@ -213,7 +214,6 @@ export default function Dashboard() {
             <TaskTable
               tasks={activeTasks}
               projects={projects}
-              showProject
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
               onComplete={handleCompleteTask}
@@ -250,7 +250,6 @@ export default function Dashboard() {
               <CollapsibleContent className="pt-2">
                 <TaskTable
                   tasks={doneTasks}
-                  showProject
                   onEdit={handleEditTask}
                   onDelete={handleDeleteTask}
                   onComplete={handleCompleteTask}

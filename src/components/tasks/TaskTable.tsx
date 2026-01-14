@@ -55,7 +55,6 @@ type SortDirection = "asc" | "desc";
 interface TaskTableProps {
   tasks: Task[];
   projects?: Project[];
-  showProject?: boolean;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
   onComplete?: (task: Task) => void;
@@ -105,13 +104,12 @@ const PRIORITY_ORDER: Record<TaskPriority, number> = {
 export function TaskTable({ 
   tasks, 
   projects = [],
-  showProject = false, 
   onEdit, 
   onDelete,
   onComplete,
   onQuickAdd,
   onInlineEdit,
-  columnVisibility = { title: true, status: true, priority: true, dueDate: true },
+  columnVisibility = { title: true, project: true, status: true, priority: true, dueDate: true },
 }: TaskTableProps) {
   const [quickAddTitle, setQuickAddTitle] = useState("");
   const [quickAddProjectId, setQuickAddProjectId] = useState("");
@@ -273,7 +271,7 @@ export function TaskTable({
   // Calculate column count for spanning
   let colCount = 3; // checkbox, task id, actions
   if (columnVisibility.title) colCount++;
-  if (showProject) colCount++;
+  if (columnVisibility.project) colCount++;
   if (columnVisibility.dueDate) colCount++;
   if (columnVisibility.status) colCount++;
   if (columnVisibility.priority) colCount++;
@@ -300,7 +298,7 @@ export function TaskTable({
                 </div>
               </TableHead>
             )}
-            {showProject && (
+            {columnVisibility.project && (
               <TableHead 
                 className="w-[160px] text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => handleSort("project")}
@@ -368,7 +366,7 @@ export function TaskTable({
                   />
                 </TableCell>
               )}
-              {showProject && (
+              {columnVisibility.project && (
                 <TableCell className="py-3">
                   <Select value={quickAddProjectId || undefined} onValueChange={setQuickAddProjectId}>
                     <SelectTrigger className="h-auto w-auto min-w-0 text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1 [&>span]:text-muted-foreground">
@@ -517,7 +515,7 @@ export function TaskTable({
                     )}
                   </TableCell>
                 )}
-                {showProject && (
+                {columnVisibility.project && (
                   <TableCell>
                     {task.project ? (
                       <Link

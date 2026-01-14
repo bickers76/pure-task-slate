@@ -21,6 +21,7 @@ export type ViewMode = "list" | "kanban";
 
 export interface ColumnVisibility {
   title: boolean;
+  project: boolean;
   status: boolean;
   priority: boolean;
   dueDate: boolean;
@@ -50,7 +51,7 @@ export function TaskFilters({
   onAddTask,
   viewMode = "list",
   onViewModeChange,
-  columnVisibility = { title: true, status: true, priority: true, dueDate: true },
+  columnVisibility = { title: true, project: true, status: true, priority: true, dueDate: true },
   onColumnVisibilityChange,
 }: TaskFiltersProps) {
   const handleColumnToggle = (column: keyof ColumnVisibility) => {
@@ -86,8 +87,8 @@ export function TaskFilters({
             <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
-              checked={true}
-              disabled
+              checked={columnVisibility.project}
+              onCheckedChange={() => handleColumnToggle("project")}
             >
               Project
             </DropdownMenuCheckboxItem>
