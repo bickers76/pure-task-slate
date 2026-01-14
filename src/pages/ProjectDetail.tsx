@@ -6,7 +6,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
-import { TaskTable, InlineEditData } from "@/components/tasks/TaskTable";
+import { TaskTable, InlineEditData, QuickAddData } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import {
@@ -135,6 +135,34 @@ function ProjectDetailContent() {
     }
   };
 
+  const handleQuickAddTask = async (data: QuickAddData) => {
+    try {
+      await createTaskMutation.mutateAsync({
+        project_id: projectId!,
+        title: data.title,
+        description: null,
+        status: data.status,
+        priority: data.priority,
+        due_date: data.due_date,
+      });
+      toast.success("Task created");
+    } catch {
+      toast.error("Failed to create task");
+    }
+  };
+
+  const handleCompleteTask = async (task: Task) => {
+    try {
+      const newStatus = task.status === "Done" ? "Todo" : "Done";
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        updates: { status: newStatus },
+      });
+    } catch {
+      toast.error("Failed to update task");
+    }
+  };
+
   if (projectLoading) {
     return (
       <>
@@ -228,8 +256,11 @@ function ProjectDetailContent() {
             ) : (
               <TaskTable
                 tasks={activeTasks}
+                projects={[project]}
                 onEdit={handleEditTask}
                 onDelete={handleDeleteTask}
+                onComplete={handleCompleteTask}
+                onQuickAdd={handleQuickAddTask}
                 onInlineEdit={handleInlineEdit}
               />
             )}
@@ -254,8 +285,10 @@ function ProjectDetailContent() {
                 <CollapsibleContent className="pt-2">
                   <TaskTable
                     tasks={doneTasks}
+                    projects={[project]}
                     onEdit={handleEditTask}
                     onDelete={handleDeleteTask}
+                    onComplete={handleCompleteTask}
                     onInlineEdit={handleInlineEdit}
                   />
                 </CollapsibleContent>
