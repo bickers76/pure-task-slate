@@ -1,9 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, ListChecks, Clock, CalendarDays, FolderKanban, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { TopBar } from "@/components/layout/TopBar";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { QuickCreateDialog } from "@/components/quick-create/QuickCreateDialog";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
 import { TaskTable } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
@@ -13,8 +10,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useProjects, useCreateProject } from "@/hooks/useProjects";
-import { useTasks, useTaskStats, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
+import { useProjects } from "@/hooks/useProjects";
+import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
 import { Task, TaskStatus, TaskPriority, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -22,9 +19,7 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
-  const { data: stats } = useTaskStats();
 
-  const createProjectMutation = useCreateProject();
   const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
@@ -50,28 +45,6 @@ export default function Dashboard() {
   const doneTasks = useMemo(() => {
     return tasks.filter((task) => task.status === "Done");
   }, [tasks]);
-
-  const handleCreateProject = async (name: string) => {
-    try {
-      await createProjectMutation.mutateAsync(name);
-      toast.success("Project created");
-    } catch {
-      toast.error("Failed to create project");
-    }
-  };
-
-  const handleCreateTask = async (projectId: string, title: string, priority: TaskPriority) => {
-    try {
-      await createTaskMutation.mutateAsync({
-        project_id: projectId,
-        title,
-        priority,
-      });
-      toast.success("Task created");
-    } catch {
-      toast.error("Failed to create task");
-    }
-  };
 
   const handleSaveTask = async (data: {
     project_id: string;
@@ -119,80 +92,44 @@ export default function Dashboard() {
 
   return (
     <AppShell>
-      <TopBar
-        title="Dashboard"
-        actions={
-          <QuickCreateDialog
-            projects={projects}
-            onCreateProject={handleCreateProject}
-            onCreateTask={handleCreateTask}
-          />
-        }
-      />
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="space-y-8 p-6 lg:p-8">
-          {/* Stats Grid */}
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="Open Tasks"
-              value={stats?.openCount ?? 0}
-              icon={<ListChecks className="h-5 w-5" />}
-            />
-            <StatCard
-              label="In Progress"
-              value={stats?.inProgressCount ?? 0}
-              icon={<Clock className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Due Soon"
-              value={stats?.dueSoonCount ?? 0}
-              icon={<CalendarDays className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Projects"
-              value={projects.length}
-              icon={<FolderKanban className="h-5 w-5" />}
-            />
-          </section>
+        <div className="space-y-6 p-6 lg:p-8">
+          {/* Header */}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Welcome back!</h1>
+            <p className="text-muted-foreground">Here's a list of your tasks for this month.</p>
+          </div>
 
-          {/* Active Tasks Section */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Your Tasks</h2>
-              <Button size="sm" variant="outline" className="gap-2" onClick={handleAddTask}>
-                <Plus className="h-4 w-4" />
-                Add Task
-              </Button>
+          {/* Filters + Actions */}
+          <TaskFilters
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            priorityFilter={priorityFilter}
+            onPriorityFilterChange={setPriorityFilter}
+            onAddTask={handleAddTask}
+          />
+
+          {/* Task Table */}
+          {tasksLoading || projectsLoading ? (
+            <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+              Loading...
             </div>
-
-            <TaskFilters
-              search={search}
-              onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              priorityFilter={priorityFilter}
-              onPriorityFilterChange={setPriorityFilter}
+          ) : activeTasks.length === 0 ? (
+            <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+              {projects.length === 0
+                ? "No tasks yet. Create your first project to get started."
+                : "No tasks match your filters."}
+            </div>
+          ) : (
+            <TaskTable
+              tasks={activeTasks}
+              showProject
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
             />
-
-            {tasksLoading || projectsLoading ? (
-              <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                Loading...
-              </div>
-            ) : activeTasks.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                {projects.length === 0
-                  ? "No tasks yet. Create your first project to get started."
-                  : "No tasks match your filters."}
-              </div>
-            ) : (
-              <TaskTable
-                tasks={activeTasks}
-                showProject
-                onEdit={handleEditTask}
-                onDelete={handleDeleteTask}
-              />
-            )}
-          </section>
+          )}
 
           {/* Done Tasks Section (Collapsed) */}
           {doneTasks.length > 0 && (
