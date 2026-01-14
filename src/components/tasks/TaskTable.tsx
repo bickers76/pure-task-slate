@@ -1,6 +1,8 @@
-import { MoreHorizontal, Pencil, Trash2, Calendar } from "lucide-react";
+import { useState } from "react";
+import { MoreHorizontal, Pencil, Trash2, Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +23,7 @@ import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ColumnVisibility } from "./TaskFilters";
-import { format, differenceInDays, parseISO, isValid } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface TaskTableProps {
@@ -30,6 +32,7 @@ interface TaskTableProps {
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
   onComplete?: (task: Task) => void;
+  onQuickAdd?: (title: string) => void;
   columnVisibility?: ColumnVisibility;
 }
 
@@ -47,38 +50,14 @@ function getTypeBadgeVariant(type: string): "default" | "secondary" | "outline" 
   return "outline";
 }
 
-// Get due date styling based on how soon/overdue it is
-function getDueDateStyle(dueDate: string | null): { className: string; label: string } {
-  if (!dueDate) {
-    return { className: "text-muted-foreground", label: "—" };
-  }
-
-  const date = parseISO(dueDate);
-  if (!isValid(date)) {
-    return { className: "text-muted-foreground", label: "—" };
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const daysUntilDue = differenceInDays(date, today);
-
-  let className = "text-muted-foreground";
+// Format due date without color coding
+function formatDueDate(dueDate: string | null): string {
+  if (!dueDate) return "—";
   
-  if (daysUntilDue < 0) {
-    // Overdue - red
-    className = "text-destructive font-medium";
-  } else if (daysUntilDue === 0) {
-    // Due today - orange
-    className = "text-primary font-medium";
-  } else if (daysUntilDue <= 3) {
-    // Due in 1-3 days - amber/warning
-    className = "text-amber-600 dark:text-amber-500";
-  } else if (daysUntilDue <= 7) {
-    // Due in a week - subtle warning
-    className = "text-amber-500/80 dark:text-amber-400/80";
-  }
-
-  return { className, label: format(date, "MMM d, yyyy") };
+  const date = parseISO(dueDate);
+  if (!isValid(date)) return "—";
+  
+  return format(date, "MMM d, yyyy");
 }
 
 export function TaskTable({ 
@@ -87,15 +66,36 @@ export function TaskTable({
   onEdit, 
   onDelete,
   onComplete,
+  onQuickAdd,
   columnVisibility = { title: true, status: true, priority: true, dueDate: true },
 }: TaskTableProps) {
-  if (tasks.length === 0) {
-    return (
-      <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-        No tasks to display.
-      </div>
-    );
-  }
+  const [quickAddTitle, setQuickAddTitle] = useState("");
+  const [isQuickAddFocused, setIsQuickAddFocused] = useState(false);
+
+  const handleQuickAddSubmit = () => {
+    if (quickAddTitle.trim() && onQuickAdd) {
+      onQuickAdd(quickAddTitle.trim());
+      setQuickAddTitle("");
+    }
+  };
+
+  const handleQuickAddKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleQuickAddSubmit();
+    } else if (e.key === "Escape") {
+      setQuickAddTitle("");
+      setIsQuickAddFocused(false);
+    }
+  };
+
+  // Calculate column count for spanning
+  let colCount = 3; // checkbox, task id, actions
+  if (columnVisibility.title) colCount++;
+  if (showProject) colCount++;
+  if (columnVisibility.dueDate) colCount++;
+  if (columnVisibility.status) colCount++;
+  if (columnVisibility.priority) colCount++;
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
@@ -110,23 +110,56 @@ export function TaskTable({
               <TableHead className="text-muted-foreground font-medium">Title</TableHead>
             )}
             {showProject && <TableHead className="text-muted-foreground font-medium">Project</TableHead>}
+            {columnVisibility.dueDate && (
+              <TableHead className="w-[120px] text-muted-foreground font-medium">Due Date</TableHead>
+            )}
             {columnVisibility.status && (
               <TableHead className="w-[120px] text-muted-foreground font-medium">Status</TableHead>
             )}
             {columnVisibility.priority && (
               <TableHead className="w-[100px] text-muted-foreground font-medium">Priority</TableHead>
             )}
-            {columnVisibility.dueDate && (
-              <TableHead className="w-[120px] text-muted-foreground font-medium">Due Date</TableHead>
-            )}
             <TableHead className="w-[44px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
+          {/* Inline Quick Add Row */}
+          {onQuickAdd && (
+            <TableRow className="border-b border-border/50 hover:bg-transparent">
+              <TableCell className="pl-4">
+                <Plus className="h-4 w-4 text-muted-foreground" />
+              </TableCell>
+              <TableCell colSpan={colCount - 2} className="py-2">
+                <Input
+                  placeholder="Add a task..."
+                  value={quickAddTitle}
+                  onChange={(e) => setQuickAddTitle(e.target.value)}
+                  onKeyDown={handleQuickAddKeyDown}
+                  onFocus={() => setIsQuickAddFocused(true)}
+                  onBlur={() => {
+                    setIsQuickAddFocused(false);
+                    if (quickAddTitle.trim()) {
+                      handleQuickAddSubmit();
+                    }
+                  }}
+                  className="h-8 border-none bg-transparent shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
+                />
+              </TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          )}
+
+          {tasks.length === 0 && !onQuickAdd && (
+            <TableRow>
+              <TableCell colSpan={colCount} className="text-center py-8 text-muted-foreground">
+                No tasks to display.
+              </TableCell>
+            </TableRow>
+          )}
+
           {tasks.map((task) => {
             const taskType = task.tags?.[0];
             const isDone = task.status === "Done";
-            const dueDateStyle = getDueDateStyle(task.due_date);
             return (
               <TableRow key={task.id} className="group border-b border-border/50">
                 <TableCell className="pl-4">
@@ -167,6 +200,14 @@ export function TaskTable({
                     )}
                   </TableCell>
                 )}
+                {columnVisibility.dueDate && (
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      {task.due_date && <Calendar className="h-3.5 w-3.5" />}
+                      <span>{formatDueDate(task.due_date)}</span>
+                    </div>
+                  </TableCell>
+                )}
                 {columnVisibility.status && (
                   <TableCell>
                     <TaskStatusBadge status={task.status} />
@@ -175,14 +216,6 @@ export function TaskTable({
                 {columnVisibility.priority && (
                   <TableCell>
                     <TaskPriorityBadge priority={task.priority} />
-                  </TableCell>
-                )}
-                {columnVisibility.dueDate && (
-                  <TableCell>
-                    <div className={cn("flex items-center gap-1.5 text-sm", dueDateStyle.className)}>
-                      {task.due_date && <Calendar className="h-3.5 w-3.5" />}
-                      <span>{dueDateStyle.label}</span>
-                    </div>
                   </TableCell>
                 )}
                 <TableCell className="pr-4">
