@@ -464,11 +464,13 @@ export function TaskTable({
 
             return (
               <TableRow key={task.id} className="group border-b border-border/50">
-                <TableCell className="pl-4">
-                  <Checkbox 
-                    checked={isDone}
-                    onCheckedChange={() => onComplete?.(task)}
-                  />
+                <TableCell className="pl-4 w-[40px]">
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <Checkbox 
+                      checked={isDone}
+                      onCheckedChange={() => onComplete?.(task)}
+                    />
+                  </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground font-mono text-sm">
                   {getShortId(task.id)}
