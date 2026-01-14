@@ -20,7 +20,10 @@ const statusLabels: Record<TaskStatus, string> = {
 
 export function TaskStatusBadge({ status }: TaskStatusBadgeProps) {
   return (
-    <Badge variant="secondary" className={cn("font-medium", statusStyles[status])}>
+    <Badge
+      variant="secondary"
+      className={cn("font-medium whitespace-nowrap", statusStyles[status])}
+    >
       {statusLabels[status]}
     </Badge>
   );
