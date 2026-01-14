@@ -20,12 +20,15 @@ import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { ColumnVisibility } from "./TaskFilters";
 
 interface TaskTableProps {
   tasks: Task[];
   showProject?: boolean;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
+  onComplete?: (task: Task) => void;
+  columnVisibility?: ColumnVisibility;
 }
 
 // Generate a short task ID from UUID
@@ -42,7 +45,14 @@ function getTypeBadgeVariant(type: string): "default" | "secondary" | "outline" 
   return "outline";
 }
 
-export function TaskTable({ tasks, showProject = false, onEdit, onDelete }: TaskTableProps) {
+export function TaskTable({ 
+  tasks, 
+  showProject = false, 
+  onEdit, 
+  onDelete,
+  onComplete,
+  columnVisibility = { title: true, status: true, priority: true },
+}: TaskTableProps) {
   if (tasks.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
@@ -57,40 +67,52 @@ export function TaskTable({ tasks, showProject = false, onEdit, onDelete }: Task
         <TableHeader>
           <TableRow className="bg-muted/30 hover:bg-muted/30">
             <TableHead className="w-[40px] pl-4">
-              <Checkbox className="opacity-50" />
+              <Checkbox className="opacity-50" disabled />
             </TableHead>
             <TableHead className="w-[100px] text-muted-foreground font-medium">Task</TableHead>
-            <TableHead className="text-muted-foreground font-medium">Title</TableHead>
+            {columnVisibility.title && (
+              <TableHead className="text-muted-foreground font-medium">Title</TableHead>
+            )}
             {showProject && <TableHead className="text-muted-foreground font-medium">Project</TableHead>}
-            <TableHead className="w-[120px] text-muted-foreground font-medium">Status</TableHead>
-            <TableHead className="w-[100px] text-muted-foreground font-medium">Priority</TableHead>
+            {columnVisibility.status && (
+              <TableHead className="w-[120px] text-muted-foreground font-medium">Status</TableHead>
+            )}
+            {columnVisibility.priority && (
+              <TableHead className="w-[100px] text-muted-foreground font-medium">Priority</TableHead>
+            )}
             <TableHead className="w-[44px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.map((task) => {
             const taskType = task.tags?.[0];
+            const isDone = task.status === "Done";
             return (
               <TableRow key={task.id} className="group border-b border-border/50">
                 <TableCell className="pl-4">
-                  <Checkbox />
+                  <Checkbox 
+                    checked={isDone}
+                    onCheckedChange={() => onComplete?.(task)}
+                  />
                 </TableCell>
                 <TableCell className="text-muted-foreground font-mono text-sm">
                   {getShortId(task.id)}
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {taskType && (
-                      <Badge 
-                        variant={getTypeBadgeVariant(taskType)}
-                        className="text-xs font-normal shrink-0"
-                      >
-                        {taskType}
-                      </Badge>
-                    )}
-                    <span className="font-medium truncate">{task.title}</span>
-                  </div>
-                </TableCell>
+                {columnVisibility.title && (
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {taskType && (
+                        <Badge 
+                          variant={getTypeBadgeVariant(taskType)}
+                          className="text-xs font-normal shrink-0"
+                        >
+                          {taskType}
+                        </Badge>
+                      )}
+                      <span className="font-medium truncate">{task.title}</span>
+                    </div>
+                  </TableCell>
+                )}
                 {showProject && (
                   <TableCell>
                     {task.project ? (
@@ -105,12 +127,16 @@ export function TaskTable({ tasks, showProject = false, onEdit, onDelete }: Task
                     )}
                   </TableCell>
                 )}
-                <TableCell>
-                  <TaskStatusBadge status={task.status} />
-                </TableCell>
-                <TableCell>
-                  <TaskPriorityBadge priority={task.priority} />
-                </TableCell>
+                {columnVisibility.status && (
+                  <TableCell>
+                    <TaskStatusBadge status={task.status} />
+                  </TableCell>
+                )}
+                {columnVisibility.priority && (
+                  <TableCell>
+                    <TaskPriorityBadge priority={task.priority} />
+                  </TableCell>
+                )}
                 <TableCell className="pr-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

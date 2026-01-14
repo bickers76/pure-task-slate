@@ -24,6 +24,7 @@ interface TaskDialogProps {
   task?: Task | null;
   projects: Project[];
   defaultProjectId?: string;
+  defaultStatus?: TaskStatus | null;
   onSave: (data: {
     project_id: string;
     title: string;
@@ -40,6 +41,7 @@ export function TaskDialog({
   task,
   projects,
   defaultProjectId,
+  defaultStatus,
   onSave,
 }: TaskDialogProps) {
   const [projectId, setProjectId] = useState(defaultProjectId || "");
@@ -62,7 +64,7 @@ export function TaskDialog({
       setProjectId(defaultProjectId || "");
       setTitle("");
       setDescription("");
-      setStatus("Backlog");
+      setStatus(defaultStatus || "Backlog");
       setPriority("Medium");
       setDueDate("");
     }
