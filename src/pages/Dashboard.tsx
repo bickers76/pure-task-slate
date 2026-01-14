@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { ChevronDown } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { ChevronDown, Menu } from "lucide-react";
+import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TaskFilters, ViewMode, ColumnVisibility } from "@/components/tasks/TaskFilters";
 import { TaskTable, QuickAddData, InlineEditData } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
@@ -16,8 +16,11 @@ import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useReorderTasks 
 import { Task, TaskStatus, TaskPriority, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Dashboard() {
+  const { openMobileMenu } = useAppShell();
+  const isMobile = useIsMobile();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
 
@@ -178,7 +181,15 @@ export default function Dashboard() {
         <div className="space-y-6 p-6 lg:p-8">
           {/* Header */}
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back!</h1>
+            <div className="flex items-center gap-3">
+              {isMobile && (
+                <Button variant="ghost" size="icon" onClick={openMobileMenu} className="h-9 w-9 -ml-2">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              )}
+              <h1 className="text-2xl font-bold tracking-tight">Welcome back!</h1>
+            </div>
             <p className="text-muted-foreground">Here's a list of your tasks for this month.</p>
           </div>
 

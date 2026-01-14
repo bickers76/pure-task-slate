@@ -3,14 +3,27 @@ import { LayoutDashboard, FolderKanban, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderKanban },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
+}
+
+export function AppSidebar({ mobileOpen, onMobileOpenChange }: AppSidebarProps) {
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -24,8 +37,8 @@ export function AppSidebar() {
     document.documentElement.classList.toggle("dark", newIsDark);
   };
 
-  return (
-    <aside className="flex h-screen w-56 flex-col border-r border-sidebar-border bg-sidebar">
+  const sidebarContent = (
+    <>
       <div className="flex h-14 items-center px-4">
         <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">
           GetShitDone
@@ -43,6 +56,7 @@ export function AppSidebar() {
             <NavLink
               key={item.href}
               to={item.href}
+              onClick={() => onMobileOpenChange?.(false)}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive
@@ -68,6 +82,29 @@ export function AppSidebar() {
           {isDark ? "Light mode" : "Dark mode"}
         </Button>
       </div>
+    </>
+  );
+
+  // Mobile: use Sheet drawer
+  if (isMobile) {
+    return (
+      <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
+        <SheetContent side="left" className="w-56 p-0 bg-sidebar border-sidebar-border">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation</SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full flex-col">
+            {sidebarContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: regular sidebar
+  return (
+    <aside className="flex h-screen w-56 flex-col border-r border-sidebar-border bg-sidebar">
+      {sidebarContent}
     </aside>
   );
 }

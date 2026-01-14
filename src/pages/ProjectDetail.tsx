@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Plus, List, Kanban, ChevronLeft, ChevronDown } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 type ViewMode = "list" | "kanban";
 
 export default function ProjectDetail() {
+  const { openMobileMenu } = useAppShell();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project, isLoading: projectLoading } = useProject(projectId);
   const { data: tasks = [], isLoading: tasksLoading } = useProjectTasks(projectId);
@@ -137,7 +138,7 @@ export default function ProjectDetail() {
   if (projectLoading) {
     return (
       <AppShell>
-        <TopBar title="Loading..." />
+        <TopBar title="Loading..." onMenuClick={openMobileMenu} />
         <div className="flex-1 p-6">
           <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
             Loading project...
@@ -150,7 +151,7 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <AppShell>
-        <TopBar title="Project Not Found" />
+        <TopBar title="Project Not Found" onMenuClick={openMobileMenu} />
         <div className="flex-1 p-6">
           <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
             <p>Project not found.</p>
@@ -166,6 +167,7 @@ export default function ProjectDetail() {
   return (
     <AppShell>
       <TopBar
+        onMenuClick={openMobileMenu}
         title={project.name}
         actions={
           <div className="flex items-center gap-3">
