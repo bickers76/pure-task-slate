@@ -379,7 +379,7 @@ export function TaskTable({
               {columnVisibility.dueDate && (
                 <TableCell className="py-3">
                   {quickAddDueDate ? (
-                    <div className="flex items-center gap-1 -ml-1">
+                    <div className="flex items-center gap-1">
                       <Input
                         type="date"
                         value={quickAddDueDate}
@@ -388,7 +388,7 @@ export function TaskTable({
                       />
                     </div>
                   ) : (
-                    <div className="relative -ml-1">
+                    <div className="relative">
                       <Input
                         type="date"
                         value=""
