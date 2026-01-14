@@ -156,14 +156,15 @@ export function KanbanBoard({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex h-full gap-4 overflow-x-auto p-4 scrollbar-thin">
+    <div className="flex h-full flex-1 flex-col overflow-hidden">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+      <div className="flex h-full min-h-0 flex-1 gap-4 overflow-x-auto p-4 scrollbar-thin">
         {TASK_STATUSES.filter((s) => s !== "Done").map((status) => (
           <KanbanColumn
             key={status}
@@ -194,6 +195,7 @@ export function KanbanBoard({
           </div>
         )}
       </DragOverlay>
-    </DndContext>
+      </DndContext>
+    </div>
   );
 }
