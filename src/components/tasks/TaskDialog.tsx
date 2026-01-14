@@ -47,7 +47,7 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState(defaultProjectId || "");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<TaskStatus>("Backlog");
+  const [status, setStatus] = useState<TaskStatus>("Todo");
   const [priority, setPriority] = useState<TaskPriority>("Medium");
   const [dueDate, setDueDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,7 +64,7 @@ export function TaskDialog({
       setProjectId(defaultProjectId || "");
       setTitle("");
       setDescription("");
-      setStatus(defaultStatus || "Backlog");
+      setStatus(defaultStatus || "Todo");
       setPriority("Medium");
       setDueDate("");
     }

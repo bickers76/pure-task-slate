@@ -17,7 +17,7 @@
 - project_id (uuid, fk)
 - title (text)
 - description (text)
-- status (Backlog|Todo|In Progress|Done|Canceled)
+- status (Todo|In Progress|Done)
 - priority (Low|Medium|High)
 - due_date (date)
 - tags (text[])

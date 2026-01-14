@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash2, Calendar, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MoreHorizontal, Pencil, Trash2, Calendar, Plus, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,14 @@ export interface QuickAddData {
   due_date: string | null;
 }
 
+export interface InlineEditData {
+  id: string;
+  title?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  due_date?: string | null;
+}
+
 interface TaskTableProps {
   tasks: Task[];
   projects?: Project[];
@@ -48,6 +56,7 @@ interface TaskTableProps {
   onDelete?: (task: Task) => void;
   onComplete?: (task: Task) => void;
   onQuickAdd?: (data: QuickAddData) => void;
+  onInlineEdit?: (data: InlineEditData) => void;
   columnVisibility?: ColumnVisibility;
 }
 
@@ -83,20 +92,26 @@ export function TaskTable({
   onDelete,
   onComplete,
   onQuickAdd,
+  onInlineEdit,
   columnVisibility = { title: true, status: true, priority: true, dueDate: true },
 }: TaskTableProps) {
   const [quickAddTitle, setQuickAddTitle] = useState("");
   const [quickAddProjectId, setQuickAddProjectId] = useState(projects[0]?.id || "");
-  const [quickAddStatus, setQuickAddStatus] = useState<TaskStatus>("Backlog");
+  const [quickAddStatus, setQuickAddStatus] = useState<TaskStatus>("Todo");
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>("Medium");
   const [quickAddDueDate, setQuickAddDueDate] = useState("");
 
+  // Inline editing state
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
   // Update default project when projects change
-  useState(() => {
+  useEffect(() => {
     if (projects.length > 0 && !quickAddProjectId) {
       setQuickAddProjectId(projects[0].id);
     }
-  });
+  }, [projects, quickAddProjectId]);
 
   const handleQuickAddSubmit = () => {
     if (quickAddTitle.trim() && quickAddProjectId && onQuickAdd) {
@@ -109,7 +124,7 @@ export function TaskTable({
       });
       // Reset form but keep project selection
       setQuickAddTitle("");
-      setQuickAddStatus("Backlog");
+      setQuickAddStatus("Todo");
       setQuickAddPriority("Medium");
       setQuickAddDueDate("");
     }
@@ -121,9 +136,56 @@ export function TaskTable({
       handleQuickAddSubmit();
     } else if (e.key === "Escape") {
       setQuickAddTitle("");
-      setQuickAddStatus("Backlog");
+      setQuickAddStatus("Todo");
       setQuickAddPriority("Medium");
       setQuickAddDueDate("");
+    }
+  };
+
+  // Inline editing handlers
+  const startEditingTitle = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditingField("title");
+    setEditingTitle(task.title);
+  };
+
+  const cancelEditing = () => {
+    setEditingTaskId(null);
+    setEditingField(null);
+    setEditingTitle("");
+  };
+
+  const saveTitle = (taskId: string) => {
+    if (editingTitle.trim() && onInlineEdit) {
+      onInlineEdit({ id: taskId, title: editingTitle.trim() });
+    }
+    cancelEditing();
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent, taskId: string) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveTitle(taskId);
+    } else if (e.key === "Escape") {
+      cancelEditing();
+    }
+  };
+
+  const handleInlineStatusChange = (taskId: string, newStatus: TaskStatus) => {
+    if (onInlineEdit) {
+      onInlineEdit({ id: taskId, status: newStatus });
+    }
+  };
+
+  const handleInlinePriorityChange = (taskId: string, newPriority: TaskPriority) => {
+    if (onInlineEdit) {
+      onInlineEdit({ id: taskId, priority: newPriority });
+    }
+  };
+
+  const handleInlineDueDateChange = (taskId: string, newDueDate: string) => {
+    if (onInlineEdit) {
+      onInlineEdit({ id: taskId, due_date: newDueDate || null });
     }
   };
 
@@ -214,7 +276,7 @@ export function TaskTable({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {TASK_STATUSES.filter(s => s !== "Done" && s !== "Canceled").map((status) => (
+                      {TASK_STATUSES.filter(s => s !== "Done").map((status) => (
                         <SelectItem key={status} value={status}>
                           {status}
                         </SelectItem>
@@ -239,7 +301,17 @@ export function TaskTable({
                   </Select>
                 </TableCell>
               )}
-              <TableCell className="pr-4"></TableCell>
+              <TableCell className="pr-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={handleQuickAddSubmit}
+                  disabled={!quickAddTitle.trim() || !quickAddProjectId}
+                >
+                  Add
+                </Button>
+              </TableCell>
             </TableRow>
           )}
 
@@ -254,6 +326,8 @@ export function TaskTable({
           {tasks.map((task) => {
             const taskType = task.tags?.[0];
             const isDone = task.status === "Done";
+            const isEditingThisTask = editingTaskId === task.id;
+
             return (
               <TableRow key={task.id} className="group border-b border-border/50">
                 <TableCell className="pl-4">
@@ -267,17 +341,33 @@ export function TaskTable({
                 </TableCell>
                 {columnVisibility.title && (
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {taskType && (
-                        <Badge 
-                          variant={getTypeBadgeVariant(taskType)}
-                          className="text-xs font-normal shrink-0"
-                        >
-                          {taskType}
-                        </Badge>
-                      )}
-                      <span className="font-medium truncate">{task.title}</span>
-                    </div>
+                    {isEditingThisTask && editingField === "title" ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={(e) => handleTitleKeyDown(e, task.id)}
+                          onBlur={() => saveTitle(task.id)}
+                          autoFocus
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 py-0.5"
+                        onClick={() => onInlineEdit && startEditingTitle(task)}
+                      >
+                        {taskType && (
+                          <Badge 
+                            variant={getTypeBadgeVariant(taskType)}
+                            className="text-xs font-normal shrink-0"
+                          >
+                            {taskType}
+                          </Badge>
+                        )}
+                        <span className="font-medium truncate">{task.title}</span>
+                      </div>
+                    )}
                   </TableCell>
                 )}
                 {showProject && (
@@ -296,20 +386,65 @@ export function TaskTable({
                 )}
                 {columnVisibility.dueDate && (
                   <TableCell>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      {task.due_date && <Calendar className="h-3.5 w-3.5" />}
-                      <span>{formatDueDate(task.due_date)}</span>
-                    </div>
+                    {onInlineEdit ? (
+                      <Input
+                        type="date"
+                        value={task.due_date || ""}
+                        onChange={(e) => handleInlineDueDateChange(task.id, e.target.value)}
+                        className="h-8 w-[140px] text-sm px-2 border-transparent bg-transparent hover:border-border focus:border-border"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        {task.due_date && <Calendar className="h-3.5 w-3.5" />}
+                        <span>{formatDueDate(task.due_date)}</span>
+                      </div>
+                    )}
                   </TableCell>
                 )}
                 {columnVisibility.status && (
                   <TableCell>
-                    <TaskStatusBadge status={task.status} />
+                    {onInlineEdit ? (
+                      <Select 
+                        value={task.status} 
+                        onValueChange={(v) => handleInlineStatusChange(task.id, v as TaskStatus)}
+                      >
+                        <SelectTrigger className="h-8 w-[120px] text-sm border-transparent bg-transparent hover:border-border">
+                          <TaskStatusBadge status={task.status} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TASK_STATUSES.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <TaskStatusBadge status={task.status} />
+                    )}
                   </TableCell>
                 )}
                 {columnVisibility.priority && (
                   <TableCell>
-                    <TaskPriorityBadge priority={task.priority} />
+                    {onInlineEdit ? (
+                      <Select 
+                        value={task.priority} 
+                        onValueChange={(v) => handleInlinePriorityChange(task.id, v as TaskPriority)}
+                      >
+                        <SelectTrigger className="h-8 w-[100px] text-sm border-transparent bg-transparent hover:border-border">
+                          <TaskPriorityBadge priority={task.priority} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TASK_PRIORITIES.map((priority) => (
+                            <SelectItem key={priority} value={priority}>
+                              {priority}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <TaskPriorityBadge priority={task.priority} />
+                    )}
                   </TableCell>
                 )}
                 <TableCell className="pr-4">

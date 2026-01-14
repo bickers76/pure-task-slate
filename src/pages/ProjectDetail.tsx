@@ -6,7 +6,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
-import { TaskTable } from "@/components/tasks/TaskTable";
+import { TaskTable, InlineEditData } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import {
@@ -46,7 +46,7 @@ export default function ProjectDetail() {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("Backlog");
+  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("Todo");
   const [doneOpen, setDoneOpen] = useState(false);
 
   // Filter tasks for list view
@@ -106,7 +106,7 @@ export default function ProjectDetail() {
 
   const handleAddTask = (status?: TaskStatus) => {
     setEditingTask(null);
-    setDefaultStatus(status || "Backlog");
+    setDefaultStatus(status || "Todo");
     setTaskDialogOpen(true);
   };
 
@@ -115,6 +115,22 @@ export default function ProjectDetail() {
       await reorderTasksMutation.mutateAsync(updates);
     } catch {
       toast.error("Failed to reorder tasks");
+    }
+  };
+
+  const handleInlineEdit = async (data: InlineEditData) => {
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: data.id,
+        updates: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.priority !== undefined && { priority: data.priority }),
+          ...(data.due_date !== undefined && { due_date: data.due_date }),
+        },
+      });
+    } catch {
+      toast.error("Failed to update task");
     }
   };
 
@@ -212,6 +228,7 @@ export default function ProjectDetail() {
                 tasks={activeTasks}
                 onEdit={handleEditTask}
                 onDelete={handleDeleteTask}
+                onInlineEdit={handleInlineEdit}
               />
             )}
 
@@ -237,6 +254,7 @@ export default function ProjectDetail() {
                     tasks={doneTasks}
                     onEdit={handleEditTask}
                     onDelete={handleDeleteTask}
+                    onInlineEdit={handleInlineEdit}
                   />
                 </CollapsibleContent>
               </Collapsible>

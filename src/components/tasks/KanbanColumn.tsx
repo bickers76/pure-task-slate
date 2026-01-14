@@ -17,11 +17,9 @@ interface KanbanColumnProps {
 }
 
 const statusColors: Record<TaskStatus, string> = {
-  Backlog: "border-t-muted-foreground",
   Todo: "border-t-secondary-foreground",
   "In Progress": "border-t-primary",
   Done: "border-t-green-500",
-  Canceled: "border-t-muted-foreground",
 };
 
 export function KanbanColumn({
@@ -80,7 +78,7 @@ export function KanbanColumn({
             ×
           </Button>
         )}
-        {onAddTask && status !== "Done" && status !== "Canceled" && (
+        {onAddTask && status !== "Done" && (
           <Button
             variant="ghost"
             size="icon"
