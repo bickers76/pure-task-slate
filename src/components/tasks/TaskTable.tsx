@@ -218,21 +218,27 @@ export function TaskTable({
   };
 
   // Inline editing handlers
+  const [originalTitle, setOriginalTitle] = useState("");
+
   const startEditingTitle = (task: Task) => {
     setEditingTaskId(task.id);
     setEditingField("title");
     setEditingTitle(task.title);
+    setOriginalTitle(task.title);
   };
 
   const cancelEditing = () => {
     setEditingTaskId(null);
     setEditingField(null);
     setEditingTitle("");
+    setOriginalTitle("");
   };
 
   const saveTitle = (taskId: string) => {
-    if (editingTitle.trim() && onInlineEdit) {
-      onInlineEdit({ id: taskId, title: editingTitle.trim() });
+    const trimmedTitle = editingTitle.trim();
+    // Only save if title actually changed
+    if (trimmedTitle && trimmedTitle !== originalTitle && onInlineEdit) {
+      onInlineEdit({ id: taskId, title: trimmedTitle });
     }
     cancelEditing();
   };
