@@ -81,28 +81,28 @@ export default function Projects() {
 
   return (
     <AppShell>
-      <TopBar
-        title="Projects"
-        actions={
-          <Button size="sm" className="gap-2" onClick={() => handleOpenDialog()}>
-            <Plus className="h-4 w-4" />
-            New Project
-          </Button>
-        }
-      />
+      <TopBar title="Projects" />
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         <div className="p-6">
-          {isLoading ? (
-            <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-              Loading...
-            </div>
-          ) : projects.length === 0 ? (
-            <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-              <p>No projects yet. Create your first project to get started.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 max-w-md">
-              {projects.map((project) => (
+          <div className="flex flex-col gap-3 max-w-md">
+            <Button 
+              size="sm" 
+              className="gap-2 w-fit" 
+              onClick={() => handleOpenDialog()}
+            >
+              <Plus className="h-4 w-4" />
+              Add Project
+            </Button>
+            {isLoading ? (
+              <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+                Loading...
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+                <p>No projects yet. Create your first project to get started.</p>
+              </div>
+            ) : (
+              projects.map((project) => (
                 <Card key={project.id} className="group relative p-4">
                   <div className="absolute right-2 top-2">
                     <DropdownMenu>
@@ -147,9 +147,9 @@ export default function Projects() {
                     </div>
                   </Link>
                 </Card>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
 
