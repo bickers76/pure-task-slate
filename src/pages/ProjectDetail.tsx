@@ -5,7 +5,7 @@ import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaskFilters } from "@/components/tasks/TaskFilters";
+import { TaskFilters, ColumnVisibility } from "@/components/tasks/TaskFilters";
 import { TaskTable } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
@@ -49,6 +49,13 @@ function ProjectDetailContent() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("Todo");
   const [doneOpen, setDoneOpen] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    title: true,
+    project: false, // Hide project column since we're already on a project page
+    status: true,
+    priority: true,
+    dueDate: true,
+  });
 
   // Filter tasks for list view
   const activeTasks = useMemo(() => {
@@ -238,6 +245,8 @@ function ProjectDetailContent() {
               priorityFilter={priorityFilter}
               onPriorityFilterChange={setPriorityFilter}
               onAddTask={() => handleAddTask()}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
             />
 
             {tasksLoading ? (
@@ -254,6 +263,7 @@ function ProjectDetailContent() {
                   onComplete={handleCompleteTask}
                   onQuickAdd={handleQuickAddTask}
                   onInlineEdit={handleInlineEdit}
+                  columnVisibility={columnVisibility}
                 />
 
                 {activeTasks.length === 0 && (
@@ -291,6 +301,7 @@ function ProjectDetailContent() {
                     onDelete={handleDeleteTask}
                     onComplete={handleCompleteTask}
                     onInlineEdit={handleInlineEdit}
+                    columnVisibility={columnVisibility}
                   />
                 </CollapsibleContent>
               </Collapsible>
