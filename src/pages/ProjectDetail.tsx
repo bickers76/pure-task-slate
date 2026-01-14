@@ -203,7 +203,7 @@ export default function ProjectDetail() {
 
       {viewMode === "list" ? (
         <div className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="mx-auto max-w-5xl space-y-6 p-6">
+          <div className="space-y-6 p-6">
             <TaskFilters
               search={search}
               onSearchChange={setSearch}
