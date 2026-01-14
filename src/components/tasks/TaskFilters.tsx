@@ -1,4 +1,4 @@
-import { Search, CirclePlus, SlidersHorizontal, Plus } from "lucide-react";
+import { Search, CirclePlus, SlidersHorizontal, LayoutList, Kanban, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { TASK_STATUSES, TASK_PRIORITIES, TaskStatus, TaskPriority } from "@/types";
+
+export type ViewMode = "list" | "kanban";
+
+export interface ColumnVisibility {
+  title: boolean;
+  status: boolean;
+  priority: boolean;
+}
 
 interface TaskFiltersProps {
   search: string;
@@ -18,6 +34,10 @@ interface TaskFiltersProps {
   priorityFilter: TaskPriority | "all";
   onPriorityFilterChange: (value: TaskPriority | "all") => void;
   onAddTask?: () => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
+  columnVisibility?: ColumnVisibility;
+  onColumnVisibilityChange?: (visibility: ColumnVisibility) => void;
 }
 
 export function TaskFilters({
@@ -28,7 +48,20 @@ export function TaskFilters({
   priorityFilter,
   onPriorityFilterChange,
   onAddTask,
+  viewMode = "list",
+  onViewModeChange,
+  columnVisibility = { title: true, status: true, priority: true },
+  onColumnVisibilityChange,
 }: TaskFiltersProps) {
+  const handleColumnToggle = (column: keyof ColumnVisibility) => {
+    if (onColumnVisibilityChange) {
+      onColumnVisibilityChange({
+        ...columnVisibility,
+        [column]: !columnVisibility[column],
+      });
+    }
+  };
+
   return (
     <div className="flex items-center justify-between gap-4">
       {/* Left side: Search + Filter buttons */}
@@ -49,7 +82,7 @@ export function TaskFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            {TASK_STATUSES.filter(s => s !== "Done" && s !== "Canceled").map((status) => (
+            {TASK_STATUSES.map((status) => (
               <SelectItem key={status} value={status}>
                 {status}
               </SelectItem>
@@ -72,12 +105,60 @@ export function TaskFilters({
         </Select>
       </div>
 
-      {/* Right side: View + Add Task */}
+      {/* Right side: View Mode + View Options + Add Task */}
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="h-9 gap-2">
-          <SlidersHorizontal className="h-4 w-4" />
-          View
-        </Button>
+        {/* View Mode Toggle */}
+        <div className="flex items-center border border-border rounded-md">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-9 px-3 rounded-r-none ${viewMode === "list" ? "bg-muted" : ""}`}
+            onClick={() => onViewModeChange?.("list")}
+          >
+            <LayoutList className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-9 px-3 rounded-l-none ${viewMode === "kanban" ? "bg-muted" : ""}`}
+            onClick={() => onViewModeChange?.("kanban")}
+          >
+            <Kanban className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* View Options Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-2">
+              <SlidersHorizontal className="h-4 w-4" />
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[180px]">
+            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={columnVisibility.title}
+              onCheckedChange={() => handleColumnToggle("title")}
+            >
+              Title
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={columnVisibility.status}
+              onCheckedChange={() => handleColumnToggle("status")}
+            >
+              Status
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={columnVisibility.priority}
+              onCheckedChange={() => handleColumnToggle("priority")}
+            >
+              Priority
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button 
           size="sm" 
           className="h-9 gap-2 bg-foreground text-background hover:bg-primary hover:text-primary-foreground" 

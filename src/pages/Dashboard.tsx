@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { TaskFilters } from "@/components/tasks/TaskFilters";
+import { TaskFilters, ViewMode, ColumnVisibility } from "@/components/tasks/TaskFilters";
 import { TaskTable } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
+import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -11,7 +12,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useProjects } from "@/hooks/useProjects";
-import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
+import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useReorderTasks } from "@/hooks/useTasks";
 import { Task, TaskStatus, TaskPriority, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
+  const reorderTasksMutation = useReorderTasks();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
@@ -30,11 +32,27 @@ export default function Dashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    title: true,
+    status: true,
+    priority: true,
+  });
+  const [kanbanAddStatus, setKanbanAddStatus] = useState<TaskStatus | null>(null);
 
   // Filter tasks
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (!ACTIVE_STATUSES.includes(task.status)) return false;
+      if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== "all" && task.status !== statusFilter) return false;
+      if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
+      return true;
+    });
+  }, [tasks, search, statusFilter, priorityFilter]);
+
+  const allActiveTasksForKanban = useMemo(() => {
+    return tasks.filter((task) => {
       if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
       if (statusFilter !== "all" && task.status !== statusFilter) return false;
       if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
@@ -66,6 +84,7 @@ export default function Dashboard() {
         toast.success("Task created");
       }
       setEditingTask(null);
+      setKanbanAddStatus(null);
     } catch {
       toast.error("Failed to save task");
     }
@@ -82,12 +101,41 @@ export default function Dashboard() {
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
+    setKanbanAddStatus(null);
     setTaskDialogOpen(true);
   };
 
   const handleAddTask = () => {
     setEditingTask(null);
+    setKanbanAddStatus(null);
     setTaskDialogOpen(true);
+  };
+
+  const handleKanbanAddTask = (status: TaskStatus) => {
+    setEditingTask(null);
+    setKanbanAddStatus(status);
+    setTaskDialogOpen(true);
+  };
+
+  const handleCompleteTask = async (task: Task) => {
+    try {
+      const newStatus: TaskStatus = task.status === "Done" ? "Todo" : "Done";
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        updates: { status: newStatus },
+      });
+      toast.success(newStatus === "Done" ? "Task completed!" : "Task reopened");
+    } catch {
+      toast.error("Failed to update task");
+    }
+  };
+
+  const handleReorderTasks = async (updates: { id: string; sort_order: number; status?: TaskStatus }[]) => {
+    try {
+      await reorderTasksMutation.mutateAsync(updates);
+    } catch {
+      toast.error("Failed to reorder tasks");
+    }
   };
 
   return (
@@ -109,13 +157,25 @@ export default function Dashboard() {
             priorityFilter={priorityFilter}
             onPriorityFilterChange={setPriorityFilter}
             onAddTask={handleAddTask}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
           />
 
-          {/* Task Table */}
+          {/* Task View */}
           {tasksLoading || projectsLoading ? (
             <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
               Loading...
             </div>
+          ) : viewMode === "kanban" ? (
+            <KanbanBoard
+              tasks={allActiveTasksForKanban}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
+              onAddTask={handleKanbanAddTask}
+              onReorder={handleReorderTasks}
+            />
           ) : activeTasks.length === 0 ? (
             <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
               {projects.length === 0
@@ -128,11 +188,13 @@ export default function Dashboard() {
               showProject
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
+              onComplete={handleCompleteTask}
+              columnVisibility={columnVisibility}
             />
           )}
 
-          {/* Done Tasks Section (Collapsed) */}
-          {doneTasks.length > 0 && (
+          {/* Done Tasks Section (Collapsed) - Only show in list view */}
+          {viewMode === "list" && doneTasks.length > 0 && (
             <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
               <CollapsibleTrigger asChild>
                 <Button
@@ -154,6 +216,8 @@ export default function Dashboard() {
                   showProject
                   onEdit={handleEditTask}
                   onDelete={handleDeleteTask}
+                  onComplete={handleCompleteTask}
+                  columnVisibility={columnVisibility}
                 />
               </CollapsibleContent>
             </Collapsible>
@@ -167,6 +231,7 @@ export default function Dashboard() {
         task={editingTask}
         projects={projects}
         onSave={handleSaveTask}
+        defaultStatus={kanbanAddStatus}
       />
     </AppShell>
   );

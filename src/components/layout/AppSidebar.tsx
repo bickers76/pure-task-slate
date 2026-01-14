@@ -28,7 +28,7 @@ export function AppSidebar() {
     <aside className="flex h-screen w-56 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex h-14 items-center px-4">
         <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">
-          Tasks
+          GetShitDone
         </span>
       </div>
 
