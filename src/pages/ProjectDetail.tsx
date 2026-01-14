@@ -234,82 +234,82 @@ function ProjectDetailContent() {
         <span className="text-sm font-medium">{project.name}</span>
       </div>
 
-      {viewMode === "list" ? (
-        <div className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="space-y-6 p-6">
-            <TaskFilters
-              search={search}
-              onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              priorityFilter={priorityFilter}
-              onPriorityFilterChange={setPriorityFilter}
-              onAddTask={() => handleAddTask()}
-              columnVisibility={columnVisibility}
-              onColumnVisibilityChange={setColumnVisibility}
-            />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {viewMode === "list" ? (
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <div className="space-y-6 p-6">
+              <TaskFilters
+                search={search}
+                onSearchChange={setSearch}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                priorityFilter={priorityFilter}
+                onPriorityFilterChange={setPriorityFilter}
+                onAddTask={() => handleAddTask()}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+              />
 
-            {tasksLoading ? (
-              <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                Loading tasks...
-              </div>
-            ) : (
-              <>
-                <TaskTable
-                  tasks={activeTasks}
-                  projects={[project]}
-                  onEdit={handleEditTask}
-                  onDelete={handleDeleteTask}
-                  onComplete={handleCompleteTask}
-                  onQuickAdd={handleQuickAddTask}
-                  onInlineEdit={handleInlineEdit}
-                  columnVisibility={columnVisibility}
-                />
-
-                {activeTasks.length === 0 && (
-                  <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                    {tasks.length === 0
-                      ? "No tasks yet. Create your first task to get started."
-                      : "No tasks match your filters."}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Done Tasks Section (Collapsed) */}
-            {doneTasks.length > 0 && (
-              <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex w-full items-center justify-between px-4 py-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <span className="font-medium">Done ({doneTasks.length})</span>
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 transition-transform",
-                        doneOpen && "rotate-180"
-                      )}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2">
+              {tasksLoading ? (
+                <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+                  Loading tasks...
+                </div>
+              ) : (
+                <>
                   <TaskTable
-                    tasks={doneTasks}
+                    tasks={activeTasks}
                     projects={[project]}
                     onEdit={handleEditTask}
                     onDelete={handleDeleteTask}
                     onComplete={handleCompleteTask}
+                    onQuickAdd={handleQuickAddTask}
                     onInlineEdit={handleInlineEdit}
                     columnVisibility={columnVisibility}
                   />
-                </CollapsibleContent>
-              </Collapsible>
-            )}
+
+                  {activeTasks.length === 0 && (
+                    <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
+                      {tasks.length === 0
+                        ? "No tasks yet. Create your first task to get started."
+                        : "No tasks match your filters."}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Done Tasks Section (Collapsed) */}
+              {doneTasks.length > 0 && (
+                <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex w-full items-center justify-between px-4 py-2 text-muted-foreground hover:text-foreground"
+                    >
+                      <span className="font-medium">Done ({doneTasks.length})</span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          doneOpen && "rotate-180"
+                        )}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2">
+                    <TaskTable
+                      tasks={doneTasks}
+                      projects={[project]}
+                      onEdit={handleEditTask}
+                      onDelete={handleDeleteTask}
+                      onComplete={handleCompleteTask}
+                      onInlineEdit={handleInlineEdit}
+                      columnVisibility={columnVisibility}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex-1 overflow-hidden">
+        ) : (
           <KanbanBoard
             tasks={tasks}
             onEdit={handleEditTask}
@@ -317,8 +317,8 @@ function ProjectDetailContent() {
             onAddTask={handleAddTask}
             onReorder={handleReorder}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <TaskDialog
         open={taskDialogOpen}
