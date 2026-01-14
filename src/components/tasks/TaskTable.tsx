@@ -361,14 +361,14 @@ export function TaskTable({
                     value={quickAddTitle}
                     onChange={(e) => setQuickAddTitle(e.target.value)}
                     onKeyDown={handleQuickAddKeyDown}
-                    className="h-9 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
+                    className="h-auto !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0 placeholder:text-muted-foreground/60"
                   />
                 </TableCell>
               )}
               {showProject && (
                 <TableCell className="py-3">
                   <Select value={quickAddProjectId} onValueChange={setQuickAddProjectId}>
-                    <SelectTrigger className="h-9 w-[130px] text-sm border-0 bg-transparent shadow-none">
+                    <SelectTrigger className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1">
                       <SelectValue placeholder="Project" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -387,14 +387,14 @@ export function TaskTable({
                     type="date"
                     value={quickAddDueDate}
                     onChange={(e) => setQuickAddDueDate(e.target.value)}
-                    className="h-9 w-[140px] text-sm px-0 border-0 bg-transparent shadow-none"
+                    className="h-auto w-[130px] text-sm !border-0 !ring-0 bg-transparent shadow-none focus-visible:!ring-0 focus-visible:ring-offset-0 p-0"
                   />
                 </TableCell>
               )}
               {columnVisibility.status && (
                 <TableCell className="py-3">
                   <Select value={quickAddStatus} onValueChange={(v) => setQuickAddStatus(v as TaskStatus)}>
-                    <SelectTrigger className="h-9 w-[120px] text-sm border-0 bg-transparent shadow-none">
+                    <SelectTrigger className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -410,7 +410,7 @@ export function TaskTable({
               {columnVisibility.priority && (
                 <TableCell className="py-3">
                   <Select value={quickAddPriority} onValueChange={(v) => setQuickAddPriority(v as TaskPriority)}>
-                    <SelectTrigger className="h-9 w-[110px] text-sm border-0 bg-transparent shadow-none">
+                    <SelectTrigger className="h-auto w-auto text-sm !border-0 !ring-0 bg-transparent shadow-none focus:!ring-0 p-0 gap-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
@@ -556,7 +556,7 @@ export function TaskTable({
                         value={task.priority} 
                         onValueChange={(v) => handleInlinePriorityChange(task.id, v as TaskPriority)}
                       >
-                        <SelectTrigger className="h-8 w-[100px] text-sm border-transparent bg-transparent hover:border-border">
+                        <SelectTrigger className="h-8 w-[110px] text-sm border-transparent bg-transparent hover:border-border">
                           <TaskPriorityBadge priority={task.priority} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border border-border shadow-md z-50">
