@@ -218,23 +218,26 @@ function ProjectDetailContent() {
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Always show filters/toolbar */}
+        <div className="border-b border-border bg-background p-4">
+          <TaskFilters
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            priorityFilter={priorityFilter}
+            onPriorityFilterChange={setPriorityFilter}
+            onAddTask={() => handleAddTask()}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+          />
+        </div>
+
         {viewMode === "list" ? (
           <div className="flex-1 overflow-y-auto scrollbar-thin">
             <div className="space-y-6 p-6">
-              <TaskFilters
-                search={search}
-                onSearchChange={setSearch}
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
-                priorityFilter={priorityFilter}
-                onPriorityFilterChange={setPriorityFilter}
-                onAddTask={() => handleAddTask()}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                columnVisibility={columnVisibility}
-                onColumnVisibilityChange={setColumnVisibility}
-              />
-
               {tasksLoading ? (
                 <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
                   Loading tasks...
