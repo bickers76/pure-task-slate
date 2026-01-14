@@ -70,7 +70,7 @@ export const tasksRepo = {
       .from("tasks")
       .insert({
         ...input,
-        status: input.status || "Backlog",
+        status: input.status || "Todo",
         priority: input.priority || "Medium",
         sort_order: nextSortOrder,
       })
@@ -119,7 +119,7 @@ export const tasksRepo = {
     const { count, error } = await supabase
       .from("tasks")
       .select("*", { count: "exact", head: true })
-      .not("status", "in", '("Done","Canceled")');
+      .neq("status", "Done");
 
     if (error) throw error;
     return count || 0;
@@ -143,7 +143,7 @@ export const tasksRepo = {
     const { count, error } = await supabase
       .from("tasks")
       .select("*", { count: "exact", head: true })
-      .not("status", "in", '("Done","Canceled")')
+      .neq("status", "Done")
       .not("due_date", "is", null)
       .lte("due_date", weekFromNow.toISOString().split("T")[0])
       .gte("due_date", now.toISOString().split("T")[0]);

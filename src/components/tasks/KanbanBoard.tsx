@@ -51,11 +51,9 @@ export function KanbanBoard({
 
   const tasksByStatus = useMemo(() => {
     const grouped: Record<TaskStatus, Task[]> = {
-      Backlog: [],
       Todo: [],
       "In Progress": [],
       Done: [],
-      Canceled: [],
     };
     localTasks.forEach((task) => {
       grouped[task.status].push(task);

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { TaskFilters, ViewMode, ColumnVisibility } from "@/components/tasks/TaskFilters";
-import { TaskTable, QuickAddData } from "@/components/tasks/TaskTable";
+import { TaskTable, QuickAddData, InlineEditData } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { Button } from "@/components/ui/button";
@@ -155,6 +155,22 @@ export default function Dashboard() {
     }
   };
 
+  const handleInlineEdit = async (data: InlineEditData) => {
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: data.id,
+        updates: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.priority !== undefined && { priority: data.priority }),
+          ...(data.due_date !== undefined && { due_date: data.due_date }),
+        },
+      });
+    } catch {
+      toast.error("Failed to update task");
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -202,6 +218,7 @@ export default function Dashboard() {
               onDelete={handleDeleteTask}
               onComplete={handleCompleteTask}
               onQuickAdd={projects.length > 0 ? handleQuickAddTask : undefined}
+              onInlineEdit={handleInlineEdit}
               columnVisibility={columnVisibility}
             />
           )}
@@ -237,6 +254,7 @@ export default function Dashboard() {
                   onEdit={handleEditTask}
                   onDelete={handleDeleteTask}
                   onComplete={handleCompleteTask}
+                  onInlineEdit={handleInlineEdit}
                   columnVisibility={columnVisibility}
                 />
               </CollapsibleContent>

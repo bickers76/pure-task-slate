@@ -1,4 +1,4 @@
-export type TaskStatus = 'Backlog' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+export type TaskStatus = 'Todo' | 'In Progress' | 'Done';
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
 export interface Project {
@@ -23,6 +23,6 @@ export interface Task {
   project?: Project;
 }
 
-export const TASK_STATUSES: TaskStatus[] = ['Backlog', 'Todo', 'In Progress', 'Done', 'Canceled'];
+export const TASK_STATUSES: TaskStatus[] = ['Todo', 'In Progress', 'Done'];
 export const TASK_PRIORITIES: TaskPriority[] = ['Low', 'Medium', 'High'];
-export const ACTIVE_STATUSES: TaskStatus[] = ['Backlog', 'Todo', 'In Progress'];
+export const ACTIVE_STATUSES: TaskStatus[] = ['Todo', 'In Progress'];
