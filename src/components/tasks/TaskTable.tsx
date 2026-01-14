@@ -522,13 +522,13 @@ export function TaskTable({
                   </TableCell>
                 )}
                 {columnVisibility.dueDate && (
-                  <TableCell>
+                  <TableCell className="-ml-2">
                     {onInlineEdit ? (
                       <Input
                         type="date"
                         value={task.due_date || ""}
                         onChange={(e) => handleInlineDueDateChange(task.id, e.target.value)}
-                        className="h-8 w-[130px] text-sm px-2 border-transparent bg-transparent hover:border-border focus:border-border"
+                        className="h-8 w-[130px] text-sm px-0 border-transparent bg-transparent hover:border-border focus:border-border"
                       />
                     ) : (
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
