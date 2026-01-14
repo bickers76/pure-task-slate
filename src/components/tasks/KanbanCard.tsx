@@ -40,29 +40,31 @@ export function KanbanCard({ task, onEdit, onDelete }: KanbanCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group rounded-lg border border-border bg-card p-3 shadow-sm",
-        isDragging && "opacity-50 shadow-lg"
+        "group rounded-xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-border",
+        isDragging && "opacity-50 shadow-lg ring-2 ring-primary/20"
       )}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2.5">
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 active:cursor-grabbing"
+          className="mt-1 cursor-grab text-muted-foreground/40 opacity-0 group-hover:opacity-100 active:cursor-grabbing transition-opacity"
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <div className="min-w-0 flex-1 space-y-2">
+        <div className="min-w-0 flex-1 space-y-3">
           <div className="flex items-start justify-between gap-2">
-            <p className="font-medium leading-tight">{task.title}</p>
+            <p className="text-sm font-medium leading-snug text-foreground/90 tracking-tight">
+              {task.title}
+            </p>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
+                  className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <MoreHorizontal className="h-3 w-3" />
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -80,10 +82,17 @@ export function KanbanCard({ task, onEdit, onDelete }: KanbanCardProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <TaskPriorityBadge priority={task.priority} />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn(
+              "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+              task.priority === "High" && "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400",
+              task.priority === "Medium" && "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
+              task.priority === "Low" && "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+            )}>
+              {task.priority}
+            </span>
             {task.due_date && (
-              <span className="text-muted-foreground">
+              <span className="inline-flex items-center text-xs text-muted-foreground/80 font-medium">
                 {format(new Date(task.due_date), "MMM d")}
               </span>
             )}
