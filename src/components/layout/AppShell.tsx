@@ -1,6 +1,5 @@
 import { ReactNode, useState, createContext, useContext } from "react";
 import { AppSidebar } from "./AppSidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppShellContextType {
   openMobileMenu: () => void;
@@ -16,12 +15,16 @@ export function useAppShell() {
   return context;
 }
 
+// Safe hook that returns null if not in context (for optional usage)
+export function useAppShellOptional() {
+  return useContext(AppShellContext);
+}
+
 interface AppShellProps {
   children: ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const openMobileMenu = () => setMobileOpen(true);

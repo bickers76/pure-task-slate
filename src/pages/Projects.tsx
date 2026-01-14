@@ -24,7 +24,7 @@ import { Project } from "@/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-export default function Projects() {
+function ProjectsContent() {
   const { openMobileMenu } = useAppShell();
   const { data: projects = [], isLoading } = useProjects();
   const createProjectMutation = useCreateProject();
@@ -81,7 +81,7 @@ export default function Projects() {
   };
 
   return (
-    <AppShell>
+    <>
       <TopBar title="Projects" onMenuClick={openMobileMenu} />
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         <div className="p-6">
@@ -183,6 +183,14 @@ export default function Projects() {
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+export default function Projects() {
+  return (
+    <AppShell>
+      <ProjectsContent />
     </AppShell>
   );
 }

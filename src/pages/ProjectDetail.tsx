@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 type ViewMode = "list" | "kanban";
 
-export default function ProjectDetail() {
+function ProjectDetailContent() {
   const { openMobileMenu } = useAppShell();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project, isLoading: projectLoading } = useProject(projectId);
@@ -137,20 +137,20 @@ export default function ProjectDetail() {
 
   if (projectLoading) {
     return (
-      <AppShell>
+      <>
         <TopBar title="Loading..." onMenuClick={openMobileMenu} />
         <div className="flex-1 p-6">
           <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
             Loading project...
           </div>
         </div>
-      </AppShell>
+      </>
     );
   }
 
   if (!project) {
     return (
-      <AppShell>
+      <>
         <TopBar title="Project Not Found" onMenuClick={openMobileMenu} />
         <div className="flex-1 p-6">
           <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
@@ -160,12 +160,12 @@ export default function ProjectDetail() {
             </Link>
           </div>
         </div>
-      </AppShell>
+      </>
     );
   }
 
   return (
-    <AppShell>
+    <>
       <TopBar
         onMenuClick={openMobileMenu}
         title={project.name}
@@ -283,6 +283,14 @@ export default function ProjectDetail() {
         defaultProjectId={projectId}
         onSave={handleSaveTask}
       />
+    </>
+  );
+}
+
+export default function ProjectDetail() {
+  return (
+    <AppShell>
+      <ProjectDetailContent />
     </AppShell>
   );
 }
