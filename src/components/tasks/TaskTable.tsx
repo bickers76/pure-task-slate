@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { toast } from "sonner";
 import { MoreHorizontal, Pencil, Trash2, Calendar, Plus, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -184,23 +185,33 @@ export function TaskTable({
     return <ArrowDown className="ml-1 h-3.5 w-3.5" />;
   };
 
-  const handleQuickAddSubmit = () => {
-    if (quickAddTitle.trim() && quickAddProjectId && onQuickAdd) {
-      onQuickAdd({
-        project_id: quickAddProjectId,
-        title: quickAddTitle.trim(),
-        status: quickAddStatus || "Todo",
-        priority: quickAddPriority || "Medium",
-        due_date: quickAddDueDate || null,
-      });
-      // Reset form
-      setQuickAddTitle("");
-      setQuickAddProjectId("");
-      setQuickAddStatus("");
-      setQuickAddPriority("");
-      setQuickAddDueDate("");
+  const handleQuickAddSubmit = useCallback(() => {
+    if (!onQuickAdd) return;
+    
+    // Validate required fields and show feedback
+    if (!quickAddTitle.trim()) {
+      toast.error("Please enter a task title");
+      return;
     }
-  };
+    if (!quickAddProjectId) {
+      toast.error("Please select a project");
+      return;
+    }
+    
+    onQuickAdd({
+      project_id: quickAddProjectId,
+      title: quickAddTitle.trim(),
+      status: quickAddStatus || "Todo",
+      priority: quickAddPriority || "Medium",
+      due_date: quickAddDueDate || null,
+    });
+    // Reset form
+    setQuickAddTitle("");
+    setQuickAddProjectId("");
+    setQuickAddStatus("");
+    setQuickAddPriority("");
+    setQuickAddDueDate("");
+  }, [onQuickAdd, quickAddTitle, quickAddProjectId, quickAddStatus, quickAddPriority, quickAddDueDate]);
 
   const handleQuickAddKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -436,7 +447,6 @@ export function TaskTable({
                   size="sm"
                   className="h-9 px-3 text-xs"
                   onClick={handleQuickAddSubmit}
-                  disabled={!quickAddTitle.trim() || !quickAddProjectId}
                 >
                   Add
                 </Button>
