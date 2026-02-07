@@ -90,9 +90,10 @@ function formatDueDate(dueDate: string | null): string {
 
 // Status order for sorting
 const STATUS_ORDER: Record<TaskStatus, number> = {
-  "Todo": 0,
+  "Backlog": 0,
   "In Progress": 1,
-  "Done": 2,
+  "Review": 2,
+  "Done": 3,
 };
 
 // Priority order for sorting
@@ -201,7 +202,7 @@ export function TaskTable({
     onQuickAdd({
       project_id: quickAddProjectId,
       title: quickAddTitle.trim(),
-      status: quickAddStatus || "Todo",
+      status: quickAddStatus || "Backlog",
       priority: quickAddPriority || "Medium",
       due_date: quickAddDueDate || null,
     });
@@ -418,7 +419,7 @@ export function TaskTable({
                     <SelectContent className="bg-popover border border-border shadow-md z-50">
                       {TASK_STATUSES.filter(s => s !== "Done").map((status) => (
                         <SelectItem key={status} value={status}>
-                          {status === "Todo" ? "To do" : status}
+                          {status}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -560,7 +561,7 @@ export function TaskTable({
                         <SelectContent className="bg-popover border border-border shadow-md z-50">
                           {TASK_STATUSES.map((status) => (
                             <SelectItem key={status} value={status}>
-                              {status === "Todo" ? "To do" : status}
+                              {status}
                             </SelectItem>
                           ))}
                         </SelectContent>

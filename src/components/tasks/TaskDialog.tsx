@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Task, Project, TaskStatus, TaskPriority, TASK_STATUSES, TASK_PRIORITIES } from "@/types";
+import { Task, Project, TaskStatus, TaskPriority, TaskAssignee, TASK_STATUSES, TASK_PRIORITIES, TASK_ASSIGNEES } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface TaskDialogProps {
   open: boolean;
@@ -32,6 +33,8 @@ interface TaskDialogProps {
     status: TaskStatus;
     priority: TaskPriority;
     due_date: string | null;
+    assignee: TaskAssignee;
+    deliverable: string | null;
   }) => Promise<void>;
 }
 
@@ -47,9 +50,11 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState(defaultProjectId || "");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<TaskStatus>("Todo");
+  const [status, setStatus] = useState<TaskStatus>("Backlog");
   const [priority, setPriority] = useState<TaskPriority>("Medium");
   const [dueDate, setDueDate] = useState("");
+  const [assignee, setAssignee] = useState<TaskAssignee>("Mervbot");
+  const [deliverable, setDeliverable] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -60,15 +65,19 @@ export function TaskDialog({
       setStatus(task.status);
       setPriority(task.priority);
       setDueDate(task.due_date || "");
+      setAssignee(task.assignee || "Mervbot");
+      setDeliverable(task.deliverable || "");
     } else {
       setProjectId(defaultProjectId || "");
       setTitle("");
       setDescription("");
-      setStatus(defaultStatus || "Todo");
+      setStatus(defaultStatus || "Backlog");
       setPriority("Medium");
       setDueDate("");
+      setAssignee("Mervbot");
+      setDeliverable("");
     }
-  }, [task, defaultProjectId, open]);
+  }, [task, defaultProjectId, open, defaultStatus]);
 
   const handleSubmit = async () => {
     if (!title.trim() || !projectId) return;
@@ -81,6 +90,8 @@ export function TaskDialog({
         status,
         priority,
         due_date: dueDate || null,
+        assignee,
+        deliverable: deliverable.trim() || null,
       });
       onOpenChange(false);
     } finally {
@@ -171,6 +182,30 @@ export function TaskDialog({
             </div>
           </div>
 
+          {/* Assignee */}
+          <div className="space-y-2">
+            <Label>Assignee</Label>
+            <div className="flex gap-2">
+              {TASK_ASSIGNEES.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAssignee(a)}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors border",
+                    assignee === a
+                      ? a === "Wayne"
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-purple-600 text-white border-purple-600"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  )}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="task-due-date">Due Date</Label>
             <Input
@@ -179,6 +214,20 @@ export function TaskDialog({
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+          </div>
+
+          {/* Deliverable */}
+          <div className="space-y-2">
+            <Label htmlFor="task-deliverable">Deliverable</Label>
+            <Input
+              id="task-deliverable"
+              placeholder="~/path/to/file.md or URL"
+              value={deliverable}
+              onChange={(e) => setDeliverable(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              File path or URL to the deliverable
+            </p>
           </div>
 
           <Button

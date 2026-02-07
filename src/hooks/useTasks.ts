@@ -78,12 +78,13 @@ export function useTaskStats() {
   return useQuery({
     queryKey: ["stats"],
     queryFn: async () => {
-      const [openCount, inProgressCount, dueSoonCount] = await Promise.all([
+      const [openCount, inProgressCount, reviewCount, dueSoonCount] = await Promise.all([
         tasksRepo.getOpenCount(),
         tasksRepo.getInProgressCount(),
+        tasksRepo.getReviewCount(),
         tasksRepo.getDueSoonCount(),
       ]);
-      return { openCount, inProgressCount, dueSoonCount };
+      return { openCount, inProgressCount, reviewCount, dueSoonCount };
     },
   });
 }

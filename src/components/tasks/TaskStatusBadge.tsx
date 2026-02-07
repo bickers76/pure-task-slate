@@ -7,14 +7,16 @@ interface TaskStatusBadgeProps {
 }
 
 const statusStyles: Record<TaskStatus, string> = {
-  Todo: "bg-secondary text-secondary-foreground hover:bg-secondary",
-  "In Progress": "bg-secondary text-secondary-foreground hover:bg-secondary",
+  Backlog: "bg-secondary text-secondary-foreground hover:bg-secondary",
+  "In Progress": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30",
+  Review: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30",
   Done: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30",
 };
 
 const statusLabels: Record<TaskStatus, string> = {
-  Todo: "To do",
+  Backlog: "Backlog",
   "In Progress": "In Progress",
+  Review: "Review",
   Done: "Done",
 };
 

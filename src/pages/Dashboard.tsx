@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useProjects } from "@/hooks/useProjects";
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useReorderTasks } from "@/hooks/useTasks";
-import { Task, TaskStatus, TaskPriority, ACTIVE_STATUSES } from "@/types";
+import { Task, TaskStatus, TaskPriority, TaskAssignee, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -32,6 +32,7 @@ function DashboardContent() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<TaskAssignee | "all">("all");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
@@ -45,25 +46,26 @@ function DashboardContent() {
   });
   const [kanbanAddStatus, setKanbanAddStatus] = useState<TaskStatus | null>(null);
 
-  // Filter tasks
+  // Shared filter logic
+  const filterTask = (task: Task) => {
+    if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== "all" && task.status !== statusFilter) return false;
+    if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
+    if (assigneeFilter !== "all" && task.assignee !== assigneeFilter) return false;
+    return true;
+  };
+
+  // Filter tasks for list view
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (!ACTIVE_STATUSES.includes(task.status)) return false;
-      if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (statusFilter !== "all" && task.status !== statusFilter) return false;
-      if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
-      return true;
+      return filterTask(task);
     });
-  }, [tasks, search, statusFilter, priorityFilter]);
+  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
 
-  const allActiveTasksForKanban = useMemo(() => {
-    return tasks.filter((task) => {
-      if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (statusFilter !== "all" && task.status !== statusFilter) return false;
-      if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
-      return true;
-    });
-  }, [tasks, search, statusFilter, priorityFilter]);
+  const allFilteredTasks = useMemo(() => {
+    return tasks.filter(filterTask);
+  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
 
   const doneTasks = useMemo(() => {
     return tasks.filter((task) => task.status === "Done");
@@ -76,6 +78,8 @@ function DashboardContent() {
     status: TaskStatus;
     priority: TaskPriority;
     due_date: string | null;
+    assignee: TaskAssignee;
+    deliverable: string | null;
   }) => {
     try {
       if (editingTask) {
@@ -124,7 +128,7 @@ function DashboardContent() {
 
   const handleCompleteTask = async (task: Task) => {
     try {
-      const newStatus: TaskStatus = task.status === "Done" ? "Todo" : "Done";
+      const newStatus: TaskStatus = task.status === "Done" ? "Backlog" : "Done";
       await updateTaskMutation.mutateAsync({
         id: task.id,
         updates: { status: newStatus },
@@ -201,6 +205,8 @@ function DashboardContent() {
             onStatusFilterChange={setStatusFilter}
             priorityFilter={priorityFilter}
             onPriorityFilterChange={setPriorityFilter}
+            assigneeFilter={assigneeFilter}
+            onAssigneeFilterChange={setAssigneeFilter}
             onAddTask={handleAddTask}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -215,7 +221,7 @@ function DashboardContent() {
             </div>
           ) : viewMode === "kanban" ? (
             <KanbanBoard
-              tasks={allActiveTasksForKanban}
+              tasks={allFilteredTasks}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
               onAddTask={handleKanbanAddTask}
@@ -234,7 +240,7 @@ function DashboardContent() {
             />
           )}
 
-          {/* Empty state when no tasks and no projects */}
+          {/* Empty state */}
           {viewMode === "list" && activeTasks.length === 0 && projects.length === 0 && !tasksLoading && !projectsLoading && (
             <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
               No tasks yet. Create your first project to get started.
