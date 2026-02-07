@@ -10,10 +10,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
-import { Task, TaskStatus, TASK_STATUSES } from "@/types";
+import { Task, TaskStatus, ACTIVE_STATUSES, TASK_STATUSES } from "@/types";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
+import { CompletedPanel } from "./CompletedPanel";
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -31,7 +31,6 @@ export function KanbanBoard({
   onReorder,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [doneCollapsed, setDoneCollapsed] = useState(true);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
 
   // Update local tasks when props change
@@ -51,12 +50,15 @@ export function KanbanBoard({
 
   const tasksByStatus = useMemo(() => {
     const grouped: Record<TaskStatus, Task[]> = {
-      Todo: [],
+      Backlog: [],
       "In Progress": [],
+      Review: [],
       Done: [],
     };
     localTasks.forEach((task) => {
-      grouped[task.status].push(task);
+      if (grouped[task.status]) {
+        grouped[task.status].push(task);
+      }
     });
     // Sort by sort_order within each status
     Object.keys(grouped).forEach((status) => {
@@ -82,13 +84,13 @@ export function KanbanBoard({
     const activeTask = localTasks.find((t) => t.id === activeId);
     if (!activeTask) return;
 
-    // Check if dropping over a column
-    const isOverColumn = TASK_STATUSES.includes(overId as TaskStatus);
+    // Check if dropping over a column (only active statuses are droppable columns)
+    const isOverColumn = ACTIVE_STATUSES.includes(overId as TaskStatus);
     const newStatus = isOverColumn
       ? (overId as TaskStatus)
       : localTasks.find((t) => t.id === overId)?.status;
 
-    if (newStatus && newStatus !== activeTask.status) {
+    if (newStatus && newStatus !== activeTask.status && ACTIVE_STATUSES.includes(newStatus)) {
       setLocalTasks((prev) => {
         return prev.map((t) =>
           t.id === activeId ? { ...t, status: newStatus } : t
@@ -110,7 +112,7 @@ export function KanbanBoard({
     if (!activeTask) return;
 
     // Determine target status
-    const isOverColumn = TASK_STATUSES.includes(overId as TaskStatus);
+    const isOverColumn = ACTIVE_STATUSES.includes(overId as TaskStatus);
     const targetStatus = isOverColumn
       ? (overId as TaskStatus)
       : localTasks.find((t) => t.id === overId)?.status || activeTask.status;
@@ -156,7 +158,7 @@ export function KanbanBoard({
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden">
+    <div className="flex h-full flex-1 overflow-hidden">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -164,38 +166,36 @@ export function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-      <div className="flex h-full min-h-0 flex-1 gap-4 overflow-x-auto p-4 scrollbar-thin">
-        {TASK_STATUSES.filter((s) => s !== "Done").map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            tasks={tasksByStatus[status]}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAddTask={onAddTask}
-          />
-        ))}
-        <KanbanColumn
-          status="Done"
-          tasks={tasksByStatus.Done}
-          isCollapsed={doneCollapsed}
-          onToggleCollapse={() => setDoneCollapsed(!doneCollapsed)}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      </div>
-      <DragOverlay>
-        {activeTask && (
-          <div className="opacity-90">
-            <KanbanCard
-              task={activeTask}
-              onEdit={() => {}}
-              onDelete={() => {}}
+        {/* Active columns */}
+        <div className="flex h-full min-h-0 flex-1 gap-4 overflow-x-auto p-4 scrollbar-thin">
+          {ACTIVE_STATUSES.map((status) => (
+            <KanbanColumn
+              key={status}
+              status={status}
+              tasks={tasksByStatus[status]}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onAddTask={onAddTask}
             />
-          </div>
-        )}
-      </DragOverlay>
+          ))}
+        </div>
+        <DragOverlay>
+          {activeTask && (
+            <div className="opacity-90">
+              <KanbanCard
+                task={activeTask}
+                onEdit={() => {}}
+                onDelete={() => {}}
+              />
+            </div>
+          )}
+        </DragOverlay>
       </DndContext>
+
+      {/* Completed panel — right side, outside DnD context */}
+      <div className="border-l border-border p-4 pl-0">
+        <CompletedPanel tasks={tasksByStatus.Done} onEdit={onEdit} />
+      </div>
     </div>
   );
 }

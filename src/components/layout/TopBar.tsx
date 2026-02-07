@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
-import { Menu } from "lucide-react";
+import { Menu, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "next-themes";
 
 interface TopBarProps {
   title: string;
@@ -11,6 +12,7 @@ interface TopBarProps {
 
 export function TopBar({ title, actions, onMenuClick }: TopBarProps) {
   const isMobile = useIsMobile();
+  const { theme, setTheme } = useTheme();
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6">
@@ -23,7 +25,22 @@ export function TopBar({ title, actions, onMenuClick }: TopBarProps) {
         )}
         <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex items-center gap-2">
+        {actions}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="h-9 w-9"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </div>
     </header>
   );
 }

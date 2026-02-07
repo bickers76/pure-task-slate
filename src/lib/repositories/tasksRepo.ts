@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Task, TaskStatus, TaskPriority } from "@/types";
+import { Task, TaskStatus, TaskPriority, TaskAssignee } from "@/types";
 
 export interface CreateTaskInput {
   project_id: string;
@@ -9,6 +9,8 @@ export interface CreateTaskInput {
   priority?: TaskPriority;
   due_date?: string | null;
   tags?: string[] | null;
+  assignee?: TaskAssignee;
+  deliverable?: string | null;
 }
 
 export interface UpdateTaskInput {
@@ -19,6 +21,8 @@ export interface UpdateTaskInput {
   due_date?: string | null;
   tags?: string[] | null;
   sort_order?: number;
+  assignee?: TaskAssignee;
+  deliverable?: string | null;
 }
 
 export const tasksRepo = {
@@ -69,9 +73,15 @@ export const tasksRepo = {
     const { data, error } = await supabase
       .from("tasks")
       .insert({
-        ...input,
-        status: input.status || "Todo",
+        project_id: input.project_id,
+        title: input.title,
+        description: input.description ?? null,
+        status: input.status || "Backlog",
         priority: input.priority || "Medium",
+        due_date: input.due_date ?? null,
+        tags: input.tags ?? null,
+        assignee: input.assignee || "Mervbot",
+        deliverable: input.deliverable ?? null,
         sort_order: nextSortOrder,
       })
       .select()
@@ -103,7 +113,6 @@ export const tasksRepo = {
   },
 
   async reorderTasks(updates: { id: string; sort_order: number; status?: TaskStatus }[]): Promise<void> {
-    // Update tasks one by one (batch updates not supported directly)
     for (const update of updates) {
       const { error } = await supabase
         .from("tasks")
@@ -130,6 +139,16 @@ export const tasksRepo = {
       .from("tasks")
       .select("*", { count: "exact", head: true })
       .eq("status", "In Progress");
+
+    if (error) throw error;
+    return count || 0;
+  },
+
+  async getReviewCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "Review");
 
     if (error) throw error;
     return count || 0;

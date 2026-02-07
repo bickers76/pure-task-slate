@@ -22,11 +22,9 @@ import {
   useReorderTasks,
 } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
-import { Task, TaskStatus, TaskPriority, ACTIVE_STATUSES } from "@/types";
+import { Task, TaskStatus, TaskPriority, TaskAssignee, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-
 
 function ProjectDetailContent() {
   const { openMobileMenu } = useAppShell();
@@ -44,32 +42,43 @@ function ProjectDetailContent() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<TaskAssignee | "all">("all");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("Todo");
+  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("Backlog");
   const [doneOpen, setDoneOpen] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     title: true,
-    project: false, // Hide project column since we're already on a project page
+    project: false,
     status: true,
     priority: true,
     dueDate: true,
   });
 
-  // Filter tasks for list view
+  // Apply filters
+  const filterTask = (task: Task) => {
+    if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== "all" && task.status !== statusFilter) return false;
+    if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
+    if (assigneeFilter !== "all" && task.assignee !== assigneeFilter) return false;
+    return true;
+  };
+
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (!ACTIVE_STATUSES.includes(task.status)) return false;
-      if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (statusFilter !== "all" && task.status !== statusFilter) return false;
-      if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
-      return true;
+      return filterTask(task);
     });
-  }, [tasks, search, statusFilter, priorityFilter]);
+  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
 
   const doneTasks = useMemo(() => {
     return tasks.filter((task) => task.status === "Done");
   }, [tasks]);
+
+  // For kanban view — pass all tasks (KanbanBoard handles splitting by status)
+  const kanbanTasks = useMemo(() => {
+    return tasks.filter(filterTask);
+  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
 
   const handleSaveTask = async (data: {
     project_id: string;
@@ -78,6 +87,8 @@ function ProjectDetailContent() {
     status: TaskStatus;
     priority: TaskPriority;
     due_date: string | null;
+    assignee: TaskAssignee;
+    deliverable: string | null;
   }) => {
     try {
       if (editingTask) {
@@ -113,7 +124,7 @@ function ProjectDetailContent() {
 
   const handleAddTask = (status?: TaskStatus) => {
     setEditingTask(null);
-    setDefaultStatus(status || "Todo");
+    setDefaultStatus(status || "Backlog");
     setTaskDialogOpen(true);
   };
 
@@ -159,7 +170,7 @@ function ProjectDetailContent() {
 
   const handleCompleteTask = async (task: Task) => {
     try {
-      const newStatus = task.status === "Done" ? "Todo" : "Done";
+      const newStatus = task.status === "Done" ? "Backlog" : "Done";
       await updateTaskMutation.mutateAsync({
         id: task.id,
         updates: { status: newStatus },
@@ -218,7 +229,6 @@ function ProjectDetailContent() {
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Always show filters/toolbar */}
         <div className="border-b border-border bg-background p-4">
           <TaskFilters
             search={search}
@@ -227,6 +237,8 @@ function ProjectDetailContent() {
             onStatusFilterChange={setStatusFilter}
             priorityFilter={priorityFilter}
             onPriorityFilterChange={setPriorityFilter}
+            assigneeFilter={assigneeFilter}
+            onAssigneeFilterChange={setAssigneeFilter}
             onAddTask={() => handleAddTask()}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -265,7 +277,6 @@ function ProjectDetailContent() {
                 </>
               )}
 
-              {/* Done Tasks Section (Collapsed) */}
               {doneTasks.length > 0 && (
                 <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
                   <CollapsibleTrigger asChild>
@@ -299,7 +310,7 @@ function ProjectDetailContent() {
           </div>
         ) : (
           <KanbanBoard
-            tasks={tasks}
+            tasks={kanbanTasks}
             onEdit={handleEditTask}
             onDelete={handleDeleteTask}
             onAddTask={handleAddTask}
@@ -314,6 +325,7 @@ function ProjectDetailContent() {
         task={editingTask}
         projects={projects}
         defaultProjectId={projectId}
+        defaultStatus={defaultStatus}
         onSave={handleSaveTask}
       />
     </>

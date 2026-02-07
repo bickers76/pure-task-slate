@@ -15,7 +15,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { TASK_STATUSES, TASK_PRIORITIES, TaskStatus, TaskPriority } from "@/types";
+import { TASK_STATUSES, TASK_PRIORITIES, TaskStatus, TaskPriority, TaskAssignee, TASK_ASSIGNEES } from "@/types";
+import { cn } from "@/lib/utils";
 
 export type ViewMode = "list" | "kanban";
 
@@ -34,6 +35,8 @@ interface TaskFiltersProps {
   onStatusFilterChange: (value: TaskStatus | "all") => void;
   priorityFilter: TaskPriority | "all";
   onPriorityFilterChange: (value: TaskPriority | "all") => void;
+  assigneeFilter: TaskAssignee | "all";
+  onAssigneeFilterChange: (value: TaskAssignee | "all") => void;
   onAddTask?: () => void;
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
@@ -48,6 +51,8 @@ export function TaskFilters({
   onStatusFilterChange,
   priorityFilter,
   onPriorityFilterChange,
+  assigneeFilter,
+  onAssigneeFilterChange,
   onAddTask,
   viewMode = "list",
   onViewModeChange,
@@ -130,8 +135,26 @@ export function TaskFilters({
         </div>
       </div>
 
-      {/* Right side: Status, Priority, List/Kanban */}
+      {/* Right side: Assignee, Status, Priority, List/Kanban */}
       <div className="flex items-center gap-2">
+        {/* Assignee pill filter */}
+        <div className="flex items-center border border-border rounded-md overflow-hidden">
+          {(["all", ...TASK_ASSIGNEES] as const).map((val) => (
+            <button
+              key={val}
+              onClick={() => onAssigneeFilterChange(val as TaskAssignee | "all")}
+              className={cn(
+                "h-9 px-3 text-xs font-medium transition-colors",
+                assigneeFilter === val
+                  ? "bg-foreground text-background"
+                  : "bg-background text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {val === "all" ? "All" : val}
+            </button>
+          ))}
+        </div>
+
         <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as TaskStatus | "all")}>
           <SelectTrigger className="w-auto h-9 gap-2 border-border">
             <CirclePlus className="h-4 w-4 text-muted-foreground" />

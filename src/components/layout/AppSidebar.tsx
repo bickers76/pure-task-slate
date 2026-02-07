@@ -1,9 +1,11 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Moon, Sun, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "next-themes";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -24,17 +26,16 @@ interface AppSidebarProps {
 export function AppSidebar({ mobileOpen, onMobileOpenChange }: AppSidebarProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [isDark, setIsDark] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { signOut, user } = useAuth();
 
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark");
-    setIsDark(isDarkMode);
-  }, []);
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    document.documentElement.classList.toggle("dark", newIsDark);
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out");
+    } catch {
+      toast.error("Failed to sign out");
+    }
   };
 
   const sidebarContent = (
@@ -71,16 +72,27 @@ export function AppSidebar({ mobileOpen, onMobileOpenChange }: AppSidebarProps) 
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-t border-sidebar-border p-2 space-y-1">
         <Button
           variant="ghost"
           size="sm"
-          onClick={toggleTheme}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
-          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          {isDark ? "Light mode" : "Dark mode"}
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === "dark" ? "Light mode" : "Dark mode"}
         </Button>
+        {user && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        )}
       </div>
     </>
   );
