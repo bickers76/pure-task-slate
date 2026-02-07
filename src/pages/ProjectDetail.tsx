@@ -313,6 +313,7 @@ function ProjectDetailContent() {
             tasks={kanbanTasks}
             onEdit={handleEditTask}
             onDelete={handleDeleteTask}
+            onComplete={handleCompleteTask}
             onAddTask={handleAddTask}
             onReorder={handleReorder}
           />

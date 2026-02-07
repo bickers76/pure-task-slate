@@ -1,7 +1,7 @@
 import { Task } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoreHorizontal, Pencil, Trash2, GripVertical } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, GripVertical, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,9 +16,10 @@ interface KanbanCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onComplete?: (task: Task) => void;
 }
 
-export function KanbanCard({ task, onEdit, onDelete }: KanbanCardProps) {
+export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -55,9 +56,20 @@ export function KanbanCard({ task, onEdit, onDelete }: KanbanCardProps) {
         <div className="min-w-0 flex-1 space-y-2.5">
           {/* Title + actions */}
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold leading-snug text-foreground tracking-tight">
-              {task.title}
-            </p>
+            <div className="flex items-start gap-1.5">
+              {onComplete && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onComplete(task); }}
+                  className="mt-0.5 shrink-0 text-muted-foreground/40 hover:text-emerald-500 transition-colors"
+                  title="Mark complete"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </button>
+              )}
+              <p className="text-sm font-semibold leading-snug text-foreground tracking-tight">
+                {task.title}
+              </p>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -73,6 +85,12 @@ export function KanbanCard({ task, onEdit, onDelete }: KanbanCardProps) {
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
+                {onComplete && (
+                  <DropdownMenuItem onClick={() => onComplete(task)}>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Mark Complete
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => onDelete(task)}
                   className="text-destructive focus:text-destructive"
