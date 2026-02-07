@@ -221,9 +221,88 @@ Deno.serve(async (req) => {
         );
       }
 
+      // ===== PROJECT ACTIONS =====
+
+      case 'list-projects': {
+        const { data: projects, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('List projects error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: error.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, data: projects }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'create-project': {
+        if (!data?.name) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'name is required for create-project' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { data: project, error } = await supabase
+          .from('projects')
+          .insert({ name: data.name })
+          .select('*')
+          .single();
+
+        if (error) {
+          console.error('Create project error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: error.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log('Created project:', project.id);
+        return new Response(
+          JSON.stringify({ success: true, data: project }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'delete-project': {
+        if (!id) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'id is required for delete-project' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { error } = await supabase
+          .from('projects')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.error('Delete project error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: error.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log('Deleted project:', id);
+        return new Response(
+          JSON.stringify({ success: true, data: { id } }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         return new Response(
-          JSON.stringify({ success: false, error: `Unknown action: ${action}. Valid actions: list, create, update, delete` }),
+          JSON.stringify({ success: false, error: `Unknown action: ${action}. Valid actions: list, create, update, delete, list-projects, create-project, delete-project` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
