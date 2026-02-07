@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Task } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoreHorizontal, Pencil, Trash2, GripVertical, CheckCircle2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, GripVertical, CheckCircle2, ExternalLink, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const {
     attributes,
     listeners,
@@ -35,6 +37,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
   };
 
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date));
+  const hasDetails = task.description || task.deliverable;
 
   return (
     <div
@@ -42,7 +45,8 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
       style={style}
       className={cn(
         "group rounded-xl border border-border/60 bg-card p-3.5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-border",
-        isDragging && "opacity-50 shadow-lg ring-2 ring-primary/20"
+        isDragging && "opacity-50 shadow-lg ring-2 ring-primary/20",
+        expanded && "ring-1 ring-primary/30"
       )}
     >
       <div className="flex items-start gap-2">
@@ -66,40 +70,60 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
                   <CheckCircle2 className="h-4 w-4" />
                 </button>
               )}
-              <p className="text-sm font-semibold leading-snug text-foreground tracking-tight">
-                {task.title}
-              </p>
+              <button
+                onClick={() => hasDetails && setExpanded(!expanded)}
+                className={cn(
+                  "text-left",
+                  hasDetails && "cursor-pointer"
+                )}
+              >
+                <p className="text-sm font-semibold leading-snug text-foreground tracking-tight">
+                  {task.title}
+                </p>
+              </button>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-0.5 shrink-0">
+              {hasDetails && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-6 w-6 opacity-60 hover:opacity-100 transition-opacity"
+                  onClick={() => setExpanded(!expanded)}
                 >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
+                  <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(task)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                {onComplete && (
-                  <DropdownMenuItem onClick={() => onComplete(task)}>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Mark Complete
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(task)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  onClick={() => onDelete(task)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {onComplete && (
+                    <DropdownMenuItem onClick={() => onComplete(task)}>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Mark Complete
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => onDelete(task)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Meta row */}
@@ -143,6 +167,25 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
               </span>
             )}
           </div>
+
+          {/* Expanded details */}
+          {expanded && (
+            <div className="mt-1 space-y-2 border-t border-border/40 pt-2.5 max-h-[200px] overflow-y-auto scrollbar-thin">
+              {task.description && (
+                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {task.description}
+                </p>
+              )}
+              {task.deliverable && (
+                <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1.5">
+                  <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span className="text-[11px] text-primary font-medium truncate">
+                    {task.deliverable}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
