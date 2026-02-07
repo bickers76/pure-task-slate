@@ -19,6 +19,7 @@ interface KanbanBoardProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onComplete: (task: Task) => void;
   onAddTask: (status: TaskStatus) => void;
   onReorder: (updates: { id: string; sort_order: number; status?: TaskStatus }[]) => void;
 }
@@ -27,6 +28,7 @@ export function KanbanBoard({
   tasks,
   onEdit,
   onDelete,
+  onComplete,
   onAddTask,
   onReorder,
 }: KanbanBoardProps) {
@@ -175,6 +177,7 @@ export function KanbanBoard({
               tasks={tasksByStatus[status]}
               onEdit={onEdit}
               onDelete={onDelete}
+              onComplete={onComplete}
               onAddTask={onAddTask}
             />
           ))}

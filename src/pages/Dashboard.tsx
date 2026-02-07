@@ -224,6 +224,7 @@ function DashboardContent() {
               tasks={allFilteredTasks}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
+              onComplete={handleCompleteTask}
               onAddTask={handleKanbanAddTask}
               onReorder={handleReorderTasks}
             />
