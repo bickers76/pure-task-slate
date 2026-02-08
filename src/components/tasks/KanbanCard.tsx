@@ -53,7 +53,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 cursor-grab text-muted-foreground/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 active:cursor-grabbing transition-opacity p-1 -m-1 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 md:p-0 md:m-0 flex items-center justify-center"
+          className="mt-0.5 cursor-grab text-muted-foreground/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 active:cursor-grabbing transition-opacity p-1 -m-1 min-h-[36px] min-w-[28px] md:min-h-0 md:min-w-0 md:p-0 md:m-0 flex items-center justify-center"
         >
           <GripVertical className="h-4 w-4" />
         </button>
