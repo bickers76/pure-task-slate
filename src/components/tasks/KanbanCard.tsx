@@ -77,7 +77,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
                   hasDetails && "cursor-pointer"
                 )}
               >
-                <p className="text-sm font-semibold leading-snug text-foreground tracking-tight line-clamp-2">
+                <p className="text-sm font-semibold leading-snug text-foreground tracking-tight line-clamp-3">
                   {task.title}
                 </p>
               </button>
