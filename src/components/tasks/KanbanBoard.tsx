@@ -160,7 +160,7 @@ export function KanbanBoard({
   };
 
   return (
-    <div className="flex h-full flex-1 overflow-hidden">
+    <div className="flex h-full flex-1 flex-col md:flex-row overflow-hidden">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -169,7 +169,7 @@ export function KanbanBoard({
         onDragEnd={handleDragEnd}
       >
         {/* Active columns */}
-        <div className="flex h-full min-h-0 flex-1 gap-4 overflow-x-auto p-4 scrollbar-thin">
+        <div className="flex h-full min-h-0 flex-1 gap-3 md:gap-4 overflow-x-auto p-3 md:p-4 scrollbar-thin">
           {ACTIVE_STATUSES.map((status) => (
             <KanbanColumn
               key={status}
@@ -195,8 +195,8 @@ export function KanbanBoard({
         </DragOverlay>
       </DndContext>
 
-      {/* Completed panel — right side, outside DnD context */}
-      <div className="border-l border-border p-4 pl-0">
+      {/* Completed panel — right side on desktop, bottom on mobile */}
+      <div className="border-t md:border-t-0 md:border-l border-border p-3 md:p-4 md:pl-0 shrink-0">
         <CompletedPanel tasks={tasksByStatus.Done} onEdit={onEdit} />
       </div>
     </div>

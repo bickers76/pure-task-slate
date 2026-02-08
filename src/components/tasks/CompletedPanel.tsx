@@ -10,7 +10,7 @@ interface CompletedPanelProps {
 
 export function CompletedPanel({ tasks, onEdit }: CompletedPanelProps) {
   return (
-    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-lg border border-border bg-muted/20">
+    <div className="flex h-48 md:h-full w-full md:w-[280px] shrink-0 flex-col rounded-lg border border-border bg-muted/20">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border p-3">
         <CheckCircle2 className="h-4 w-4 text-green-500" />

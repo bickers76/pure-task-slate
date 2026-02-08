@@ -53,7 +53,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 cursor-grab text-muted-foreground/40 opacity-0 group-hover:opacity-100 active:cursor-grabbing transition-opacity"
+          className="mt-0.5 cursor-grab text-muted-foreground/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 active:cursor-grabbing transition-opacity p-1 -m-1 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 md:p-0 md:m-0 flex items-center justify-center"
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -64,7 +64,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
               {onComplete && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onComplete(task); }}
-                  className="mt-0.5 shrink-0 text-muted-foreground/40 hover:text-emerald-500 transition-colors"
+                  className="mt-0.5 shrink-0 text-muted-foreground/40 hover:text-emerald-500 transition-colors p-1.5 -m-1.5 md:p-0 md:m-0"
                   title="Mark complete"
                 >
                   <CheckCircle2 className="h-4 w-4" />
@@ -77,7 +77,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
                   hasDetails && "cursor-pointer"
                 )}
               >
-                <p className="text-sm font-semibold leading-snug text-foreground tracking-tight">
+                <p className="text-sm font-semibold leading-snug text-foreground tracking-tight line-clamp-2">
                   {task.title}
                 </p>
               </button>
@@ -87,7 +87,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 opacity-60 hover:opacity-100 transition-opacity"
+                  className="h-9 w-9 md:h-6 md:w-6 opacity-60 hover:opacity-100 transition-opacity"
                   onClick={() => setExpanded(!expanded)}
                 >
                   <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
@@ -98,7 +98,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-9 w-9 md:h-6 md:w-6 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
