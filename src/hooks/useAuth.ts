@@ -35,8 +35,12 @@ export function useAuth() {
   }, []);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) {
+      // Force clear local session even if API call fails
+      setUser(null);
+      throw error;
+    }
   }, []);
 
   return { user, loading, signIn, signUp, signOut };
