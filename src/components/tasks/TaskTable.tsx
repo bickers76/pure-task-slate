@@ -290,7 +290,8 @@ export function TaskTable({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
-      <Table>
+      <div className="overflow-x-auto">
+      <Table className="min-w-[640px]">
         <TableHeader>
           <TableRow className="bg-muted/30 hover:bg-muted/30">
             <TableHead className="w-[52px] pl-4">
@@ -600,7 +601,7 @@ export function TaskTable({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-11 w-11 md:h-8 md:w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -625,6 +626,7 @@ export function TaskTable({
           })}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

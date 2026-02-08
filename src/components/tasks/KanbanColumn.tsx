@@ -36,7 +36,7 @@ export function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex h-full min-w-[260px] flex-1 flex-col rounded-lg border border-border bg-muted/30",
+        "flex h-full min-w-[260px] w-[75vw] sm:w-auto flex-1 flex-col rounded-lg border border-border bg-muted/30 shrink-0 md:shrink",
         statusColors[status] || "border-t-secondary-foreground",
         "border-t-2",
         isOver && "bg-muted/50"
@@ -51,7 +51,7 @@ export function KanbanColumn({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground"
+            className="h-9 w-9 md:h-6 md:w-6 text-muted-foreground"
             onClick={() => onAddTask(status)}
           >
             <Plus className="h-4 w-4" />
