@@ -182,7 +182,7 @@ function DashboardContent() {
   return (
     <>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="space-y-4 md:space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="space-y-4 md:space-y-6 p-2 md:p-6 lg:p-8">
           {/* Header */}
           <div className="space-y-1">
             <div className="flex items-center gap-3">

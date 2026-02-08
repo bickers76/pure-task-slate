@@ -169,7 +169,7 @@ export function KanbanBoard({
         onDragEnd={handleDragEnd}
       >
         {/* Active columns */}
-        <div className="flex h-full min-h-0 flex-1 gap-3 md:gap-4 overflow-x-auto p-3 md:p-4 scrollbar-thin">
+        <div className="flex h-full min-h-0 flex-1 gap-3 md:gap-4 overflow-x-auto p-1 md:p-4 scrollbar-thin">
           {ACTIVE_STATUSES.map((status) => (
             <KanbanColumn
               key={status}
