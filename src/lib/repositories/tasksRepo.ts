@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { addDays, format } from "date-fns";
 import { Task, TaskStatus, TaskPriority, TaskAssignee } from "@/types";
 
 export interface CreateTaskInput {
@@ -23,6 +24,7 @@ export interface UpdateTaskInput {
   sort_order?: number;
   assignee?: TaskAssignee;
   deliverable?: string | null;
+  review_feedback?: string | null;
 }
 
 export const tasksRepo = {
@@ -113,14 +115,17 @@ export const tasksRepo = {
   },
 
   async reorderTasks(updates: { id: string; sort_order: number; status?: TaskStatus }[]): Promise<void> {
-    for (const update of updates) {
-      const { error } = await supabase
-        .from("tasks")
-        .update({ sort_order: update.sort_order, ...(update.status && { status: update.status }) })
-        .eq("id", update.id);
+    const results = await Promise.all(
+      updates.map((update) =>
+        supabase
+          .from("tasks")
+          .update({ sort_order: update.sort_order, ...(update.status && { status: update.status }) })
+          .eq("id", update.id)
+      )
+    );
 
-      if (error) throw error;
-    }
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw failed.error;
   },
 
   // Stats helpers
@@ -155,17 +160,17 @@ export const tasksRepo = {
   },
 
   async getDueSoonCount(): Promise<number> {
+    // due_date is a plain calendar date, so compare against local dates, not UTC.
     const now = new Date();
-    const weekFromNow = new Date();
-    weekFromNow.setDate(now.getDate() + 7);
+    const weekFromNow = addDays(now, 7);
 
     const { count, error } = await supabase
       .from("tasks")
       .select("*", { count: "exact", head: true })
       .neq("status", "Done")
       .not("due_date", "is", null)
-      .lte("due_date", weekFromNow.toISOString().split("T")[0])
-      .gte("due_date", now.toISOString().split("T")[0]);
+      .lte("due_date", format(weekFromNow, "yyyy-MM-dd"))
+      .gte("due_date", format(now, "yyyy-MM-dd"));
 
     if (error) throw error;
     return count || 0;

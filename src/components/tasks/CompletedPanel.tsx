@@ -1,5 +1,5 @@
 import { Task } from "@/types";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
 
@@ -55,7 +55,7 @@ export function CompletedPanel({ tasks, onEdit }: CompletedPanelProps) {
                 </span>
                 {/* Updated date as completion date proxy */}
                 <span className="text-[10px] text-muted-foreground">
-                  {format(new Date(task.updated_at), "MMM d")}
+                  {format(parseISO(task.updated_at), "MMM d")}
                 </span>
               </div>
             </button>

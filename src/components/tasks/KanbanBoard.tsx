@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -10,10 +10,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Task, TaskStatus, ACTIVE_STATUSES, TASK_STATUSES } from "@/types";
+import { Task, TaskStatus, ACTIVE_STATUSES } from "@/types";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
 import { CompletedPanel } from "./CompletedPanel";
+import { ReviewDecision } from "./ReviewActions";
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -21,6 +22,7 @@ interface KanbanBoardProps {
   onDelete: (task: Task) => void;
   onComplete: (task: Task) => void;
   onAddTask: (status: TaskStatus) => void;
+  onReview?: (task: Task, decision: ReviewDecision) => void;
   onReorder: (updates: { id: string; sort_order: number; status?: TaskStatus }[]) => void;
 }
 
@@ -30,13 +32,14 @@ export function KanbanBoard({
   onDelete,
   onComplete,
   onAddTask,
+  onReview,
   onReorder,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
 
   // Update local tasks when props change
-  useMemo(() => {
+  useEffect(() => {
     if (!activeTask) {
       setLocalTasks(tasks);
     }
@@ -179,6 +182,7 @@ export function KanbanBoard({
               onDelete={onDelete}
               onComplete={onComplete}
               onAddTask={onAddTask}
+              onReview={onReview}
             />
           ))}
         </div>

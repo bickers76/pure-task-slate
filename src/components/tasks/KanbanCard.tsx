@@ -10,7 +10,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { format, isPast, isToday } from "date-fns";
+import { format, isPast, isToday, parseISO } from "date-fns";
+import { ReviewActions, ReviewDecision } from "./ReviewActions";
 import { cn } from "@/lib/utils";
 
 interface KanbanCardProps {
@@ -18,9 +19,10 @@ interface KanbanCardProps {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onComplete?: (task: Task) => void;
+  onReview?: (task: Task, decision: ReviewDecision) => void;
 }
 
-export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardProps) {
+export function KanbanCard({ task, onEdit, onDelete, onComplete, onReview }: KanbanCardProps) {
   const [expanded, setExpanded] = useState(false);
   const {
     attributes,
@@ -36,7 +38,10 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
     transition,
   };
 
-  const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date));
+  // due_date is a plain calendar date; parseISO keeps it in local time.
+  const dueDate = task.due_date ? parseISO(task.due_date) : null;
+  const isOverdue = dueDate && isPast(dueDate) && !isToday(dueDate);
+  const deliverableIsLink = !!task.deliverable && /^https?:\/\//i.test(task.deliverable);
   const hasDetails = task.description || task.deliverable;
 
   return (
@@ -156,17 +161,34 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
             />
 
             {/* Due date */}
-            {task.due_date && (
+            {dueDate && (
               <span
                 className={cn(
                   "text-[11px] font-medium",
                   isOverdue ? "text-red-500" : "text-muted-foreground/80"
                 )}
               >
-                {format(new Date(task.due_date), "MMM d")}
+                {format(dueDate, "MMM d")}
               </span>
             )}
           </div>
+
+          {/* Feedback from the last review round */}
+          {task.review_feedback && task.status !== "Done" && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                Changes requested
+              </p>
+              <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                {task.review_feedback}
+              </p>
+            </div>
+          )}
+
+          {/* Review decision */}
+          {task.status === "Review" && onReview && (
+            <ReviewActions task={task} onReview={onReview} />
+          )}
 
           {/* Expanded details */}
           {expanded && (
@@ -179,9 +201,20 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete }: KanbanCardPro
               {task.deliverable && (
                 <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1.5">
                   <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <span className="text-[11px] text-primary font-medium truncate">
-                    {task.deliverable}
-                  </span>
+                  {deliverableIsLink ? (
+                    <a
+                      href={task.deliverable}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-primary font-medium truncate hover:underline"
+                    >
+                      {task.deliverable}
+                    </a>
+                  ) : (
+                    <span className="text-[11px] text-primary font-medium truncate">
+                      {task.deliverable}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

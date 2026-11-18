@@ -9,6 +9,32 @@ const VALID_STATUSES = ['Backlog', 'In Progress', 'Review', 'Done'];
 const VALID_PRIORITIES = ['Low', 'Medium', 'High'];
 const VALID_ASSIGNEES = ['Wayne', 'Mervbot'];
 
+// Only these task columns may be changed through the API.
+const UPDATABLE_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'priority',
+  'assignee',
+  'due_date',
+  'tags',
+  'deliverable',
+  'review_feedback',
+  'sort_order',
+];
+
+// Compare secrets without leaking how many leading characters matched.
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const x = enc.encode(a);
+  const y = enc.encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < x.length; i++) {
+    diff |= x[i] ^ (y[i % (y.length || 1)] ?? 0);
+  }
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -20,6 +46,14 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     const expectedToken = Deno.env.get('BOT_API_KEY');
     
+    if (!expectedToken) {
+      console.error('task-api: BOT_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server is not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ success: false, error: 'Missing Authorization header' }),
@@ -27,8 +61,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    if (token !== expectedToken) {
+    const token = authHeader.slice('Bearer '.length);
+    if (!safeEqual(token, expectedToken)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid API key' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -171,9 +205,26 @@ Deno.serve(async (req) => {
           );
         }
 
+        const updates: Record<string, unknown> = {};
+        for (const field of UPDATABLE_FIELDS) {
+          if (data && Object.prototype.hasOwnProperty.call(data, field)) {
+            updates[field] = data[field];
+          }
+        }
+        if (Object.keys(updates).length === 0) {
+          return new Response(
+            JSON.stringify({ success: false, error: `No updatable fields provided. Allowed: ${UPDATABLE_FIELDS.join(', ')}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Moving a task into Review starts a fresh review round.
+        if (updates.status === 'Review' && !('review_feedback' in updates)) {
+          updates.review_feedback = null;
+        }
+
         const { data: task, error } = await supabase
           .from('tasks')
-          .update(data)
+          .update(updates)
           .eq('id', id)
           .select('*, project:projects(*)')
           .single();
@@ -309,7 +360,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('task-api error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unexpected error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
