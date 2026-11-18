@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Task, TaskStatus } from "@/types";
 import { KanbanCard } from "./KanbanCard";
+import { ReviewDecision } from "./ReviewActions";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ interface KanbanColumnProps {
   onDelete: (task: Task) => void;
   onComplete?: (task: Task) => void;
   onAddTask?: (status: TaskStatus) => void;
+  onReview?: (task: Task, decision: ReviewDecision) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -29,6 +31,7 @@ export function KanbanColumn({
   onDelete,
   onComplete,
   onAddTask,
+  onReview,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
@@ -70,6 +73,7 @@ export function KanbanColumn({
               onEdit={onEdit}
               onDelete={onDelete}
               onComplete={onComplete}
+              onReview={onReview}
             />
           ))}
         </div>

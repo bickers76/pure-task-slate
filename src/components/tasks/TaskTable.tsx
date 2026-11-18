@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Task, TaskStatus, TaskPriority, TASK_STATUSES, TASK_PRIORITIES, Project } from "@/types";
+import { Task, TaskStatus, TaskPriority, TaskAssignee, TASK_STATUSES, TASK_PRIORITIES, Project } from "@/types";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { Link } from "react-router-dom";
@@ -40,6 +40,7 @@ export interface QuickAddData {
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;
+  assignee: TaskAssignee;
 }
 
 export interface InlineEditData {
@@ -48,7 +49,42 @@ export interface InlineEditData {
   status?: TaskStatus;
   priority?: TaskPriority;
   due_date?: string | null;
+  assignee?: TaskAssignee;
 }
+
+function AssigneeBadge({
+  assignee,
+  onClick,
+}: {
+  assignee: TaskAssignee;
+  onClick?: () => void;
+}) {
+  const className = cn(
+    "inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white",
+    assignee === "Wayne" ? "bg-blue-500" : "bg-purple-500",
+    onClick && "cursor-pointer transition-opacity hover:opacity-80"
+  );
+  if (!onClick) {
+    return (
+      <span className={className} title={assignee}>
+        {assignee[0]}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={className}
+      title={`${assignee} — click to reassign`}
+      aria-label={`Assigned to ${assignee}. Click to reassign`}
+    >
+      {assignee[0]}
+    </button>
+  );
+}
+
+const otherAssignee = (a: TaskAssignee): TaskAssignee => (a === "Wayne" ? "Mervbot" : "Wayne");
 
 type SortField = "title" | "project" | "dueDate" | "status" | "priority";
 type SortDirection = "asc" | "desc";
@@ -118,6 +154,7 @@ export function TaskTable({
   const [quickAddStatus, setQuickAddStatus] = useState<TaskStatus | "">("");
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority | "">("");
   const [quickAddDueDate, setQuickAddDueDate] = useState("");
+  const [quickAddAssignee, setQuickAddAssignee] = useState<TaskAssignee>("Mervbot");
 
   // Sorting state
   const [sortField, setSortField] = useState<SortField | null>(null);
@@ -140,14 +177,12 @@ export function TaskTable({
           comparison = a.title.localeCompare(b.title);
           break;
         case "project":
-          const projectA = a.project?.name || "";
-          const projectB = b.project?.name || "";
-          comparison = projectA.localeCompare(projectB);
+          comparison = (a.project?.name || "").localeCompare(b.project?.name || "");
           break;
         case "dueDate":
-          const dateA = a.due_date ? new Date(a.due_date).getTime() : Infinity;
-          const dateB = b.due_date ? new Date(b.due_date).getTime() : Infinity;
-          comparison = dateA - dateB;
+          comparison =
+            (a.due_date ? new Date(a.due_date).getTime() : Infinity) -
+            (b.due_date ? new Date(b.due_date).getTime() : Infinity);
           break;
         case "status":
           comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
@@ -194,17 +229,19 @@ export function TaskTable({
       toast.error("Please enter a task title");
       return;
     }
-    if (!quickAddProjectId) {
+    const projectId = quickAddProjectId || (projects.length === 1 ? projects[0].id : "");
+    if (!projectId) {
       toast.error("Please select a project");
       return;
     }
     
     onQuickAdd({
-      project_id: quickAddProjectId,
+      project_id: projectId,
       title: quickAddTitle.trim(),
       status: quickAddStatus || "Backlog",
       priority: quickAddPriority || "Medium",
       due_date: quickAddDueDate || null,
+      assignee: quickAddAssignee,
     });
     // Reset form
     setQuickAddTitle("");
@@ -212,7 +249,7 @@ export function TaskTable({
     setQuickAddStatus("");
     setQuickAddPriority("");
     setQuickAddDueDate("");
-  }, [onQuickAdd, quickAddTitle, quickAddProjectId, quickAddStatus, quickAddPriority, quickAddDueDate]);
+  }, [onQuickAdd, quickAddTitle, quickAddProjectId, quickAddStatus, quickAddPriority, quickAddDueDate, quickAddAssignee, projects]);
 
   const handleQuickAddKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -281,7 +318,7 @@ export function TaskTable({
   };
 
   // Calculate column count for spanning
-  let colCount = 3; // checkbox, task id, actions
+  let colCount = 4; // checkbox, task id, owner, actions
   if (columnVisibility.title) colCount++;
   if (columnVisibility.project) colCount++;
   if (columnVisibility.dueDate) colCount++;
@@ -355,6 +392,7 @@ export function TaskTable({
                 </div>
               </TableHead>
             )}
+            <TableHead className="w-[70px] text-muted-foreground font-medium">Owner</TableHead>
             <TableHead className="w-[52px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -443,6 +481,12 @@ export function TaskTable({
                   </Select>
                 </TableCell>
               )}
+              <TableCell className="py-3">
+                <AssigneeBadge
+                  assignee={quickAddAssignee}
+                  onClick={() => setQuickAddAssignee(otherAssignee(quickAddAssignee))}
+                />
+              </TableCell>
               <TableCell className="pr-4 py-3">
                 <Button
                   variant="ghost"
@@ -595,6 +639,16 @@ export function TaskTable({
                     )}
                   </TableCell>
                 )}
+                <TableCell>
+                  <AssigneeBadge
+                    assignee={task.assignee}
+                    onClick={
+                      onInlineEdit
+                        ? () => onInlineEdit({ id: task.id, assignee: otherAssignee(task.assignee) })
+                        : undefined
+                    }
+                  />
+                </TableCell>
                 <TableCell className="pr-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { TaskFilters, ColumnVisibility, ViewMode } from "@/components/tasks/TaskFilters";
-import { TaskTable } from "@/components/tasks/TaskTable";
+import { TaskTable, QuickAddData, InlineEditData } from "@/components/tasks/TaskTable";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import {
@@ -24,6 +24,7 @@ import {
 import { useProjects } from "@/hooks/useProjects";
 import { Task, TaskStatus, TaskPriority, TaskAssignee, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
+import { useReviewTask } from "@/hooks/useTaskActions";
 import { cn } from "@/lib/utils";
 
 function ProjectDetailContent() {
@@ -37,6 +38,7 @@ function ProjectDetailContent() {
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
   const reorderTasksMutation = useReorderTasks();
+  const handleReviewTask = useReviewTask();
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [search, setSearch] = useState("");
@@ -56,29 +58,29 @@ function ProjectDetailContent() {
   });
 
   // Apply filters
-  const filterTask = (task: Task) => {
+  const filterTask = useCallback((task: Task) => {
     if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (statusFilter !== "all" && task.status !== statusFilter) return false;
     if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
     if (assigneeFilter !== "all" && task.assignee !== assigneeFilter) return false;
     return true;
-  };
+  }, [search, statusFilter, priorityFilter, assigneeFilter]);
 
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (!ACTIVE_STATUSES.includes(task.status)) return false;
       return filterTask(task);
     });
-  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
+  }, [tasks, filterTask]);
 
   const doneTasks = useMemo(() => {
-    return tasks.filter((task) => task.status === "Done");
-  }, [tasks]);
+    return tasks.filter((task) => task.status === "Done" && filterTask(task));
+  }, [tasks, filterTask]);
 
   // For kanban view — pass all tasks (KanbanBoard handles splitting by status)
   const kanbanTasks = useMemo(() => {
     return tasks.filter(filterTask);
-  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
+  }, [tasks, filterTask]);
 
   const handleSaveTask = async (data: {
     project_id: string;
@@ -136,7 +138,7 @@ function ProjectDetailContent() {
     }
   };
 
-  const handleInlineEdit = async (data: { id: string; title?: string; status?: TaskStatus; priority?: TaskPriority; due_date?: string | null; }) => {
+  const handleInlineEdit = async (data: InlineEditData) => {
     try {
       await updateTaskMutation.mutateAsync({
         id: data.id,
@@ -145,6 +147,7 @@ function ProjectDetailContent() {
           ...(data.status !== undefined && { status: data.status }),
           ...(data.priority !== undefined && { priority: data.priority }),
           ...(data.due_date !== undefined && { due_date: data.due_date }),
+          ...(data.assignee !== undefined && { assignee: data.assignee }),
         },
       });
     } catch {
@@ -152,7 +155,7 @@ function ProjectDetailContent() {
     }
   };
 
-  const handleQuickAddTask = async (data: { project_id: string; title: string; status: TaskStatus; priority: TaskPriority; due_date: string | null; }) => {
+  const handleQuickAddTask = async (data: QuickAddData) => {
     try {
       await createTaskMutation.mutateAsync({
         project_id: projectId!,
@@ -161,6 +164,7 @@ function ProjectDetailContent() {
         status: data.status,
         priority: data.priority,
         due_date: data.due_date,
+        assignee: data.assignee,
       });
       toast.success("Task created");
     } catch {
@@ -170,11 +174,12 @@ function ProjectDetailContent() {
 
   const handleCompleteTask = async (task: Task) => {
     try {
-      const newStatus = task.status === "Done" ? "Backlog" : "Done";
+      const newStatus: TaskStatus = task.status === "Done" ? "Backlog" : "Done";
       await updateTaskMutation.mutateAsync({
         id: task.id,
         updates: { status: newStatus },
       });
+      toast.success(newStatus === "Done" ? "Task completed!" : "Task reopened");
     } catch {
       toast.error("Failed to update task");
     }
@@ -267,7 +272,7 @@ function ProjectDetailContent() {
                     columnVisibility={columnVisibility}
                   />
 
-                  {activeTasks.length === 0 && (
+                  {activeTasks.length === 0 && statusFilter !== "Done" && (
                     <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
                       {tasks.length === 0
                         ? "No tasks yet. Create your first task to get started."
@@ -278,7 +283,7 @@ function ProjectDetailContent() {
               )}
 
               {doneTasks.length > 0 && (
-                <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
+                <Collapsible open={doneOpen || statusFilter === "Done"} onOpenChange={setDoneOpen}>
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
@@ -288,7 +293,7 @@ function ProjectDetailContent() {
                       <ChevronDown
                         className={cn(
                           "h-4 w-4 transition-transform",
-                          doneOpen && "rotate-180"
+                          (doneOpen || statusFilter === "Done") && "rotate-180"
                         )}
                       />
                     </Button>
@@ -315,6 +320,7 @@ function ProjectDetailContent() {
             onDelete={handleDeleteTask}
             onComplete={handleCompleteTask}
             onAddTask={handleAddTask}
+            onReview={handleReviewTask}
             onReorder={handleReorder}
           />
         )}

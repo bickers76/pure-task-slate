@@ -70,6 +70,7 @@ export function useReorderTasks() {
       tasksRepo.reorderTasks(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
     },
   });
 }

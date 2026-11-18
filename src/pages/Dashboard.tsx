@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { ChevronDown, Menu } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { ChevronDown, Menu, CircleDot, Loader, Eye, CalendarClock } from "lucide-react";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TaskFilters, ViewMode, ColumnVisibility } from "@/components/tasks/TaskFilters";
 import { TaskTable, QuickAddData, InlineEditData } from "@/components/tasks/TaskTable";
@@ -12,9 +13,10 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useProjects } from "@/hooks/useProjects";
-import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useReorderTasks } from "@/hooks/useTasks";
+import { useTasks, useTaskStats, useCreateTask, useUpdateTask, useDeleteTask, useReorderTasks } from "@/hooks/useTasks";
 import { Task, TaskStatus, TaskPriority, TaskAssignee, ACTIVE_STATUSES } from "@/types";
 import { toast } from "sonner";
+import { useReviewTask } from "@/hooks/useTaskActions";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -23,11 +25,13 @@ function DashboardContent() {
   const isMobile = useIsMobile();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+  const { data: stats } = useTaskStats();
 
   const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
   const reorderTasksMutation = useReorderTasks();
+  const handleReviewTask = useReviewTask();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
@@ -47,13 +51,13 @@ function DashboardContent() {
   const [kanbanAddStatus, setKanbanAddStatus] = useState<TaskStatus | null>(null);
 
   // Shared filter logic
-  const filterTask = (task: Task) => {
+  const filterTask = useCallback((task: Task) => {
     if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (statusFilter !== "all" && task.status !== statusFilter) return false;
     if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
     if (assigneeFilter !== "all" && task.assignee !== assigneeFilter) return false;
     return true;
-  };
+  }, [search, statusFilter, priorityFilter, assigneeFilter]);
 
   // Filter tasks for list view
   const activeTasks = useMemo(() => {
@@ -61,15 +65,15 @@ function DashboardContent() {
       if (!ACTIVE_STATUSES.includes(task.status)) return false;
       return filterTask(task);
     });
-  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
+  }, [tasks, filterTask]);
 
   const allFilteredTasks = useMemo(() => {
     return tasks.filter(filterTask);
-  }, [tasks, search, statusFilter, priorityFilter, assigneeFilter]);
+  }, [tasks, filterTask]);
 
   const doneTasks = useMemo(() => {
-    return tasks.filter((task) => task.status === "Done");
-  }, [tasks]);
+    return tasks.filter((task) => task.status === "Done" && filterTask(task));
+  }, [tasks, filterTask]);
 
   const handleSaveTask = async (data: {
     project_id: string;
@@ -156,6 +160,7 @@ function DashboardContent() {
         status: data.status,
         priority: data.priority,
         due_date: data.due_date,
+        assignee: data.assignee,
       });
       toast.success("Task created");
     } catch {
@@ -172,6 +177,7 @@ function DashboardContent() {
           ...(data.status !== undefined && { status: data.status }),
           ...(data.priority !== undefined && { priority: data.priority }),
           ...(data.due_date !== undefined && { due_date: data.due_date }),
+          ...(data.assignee !== undefined && { assignee: data.assignee }),
         },
       });
     } catch {
@@ -194,7 +200,15 @@ function DashboardContent() {
               )}
               <h1 className="text-2xl font-bold tracking-tight">Welcome back!</h1>
             </div>
-            <p className="text-muted-foreground">Here's a list of your tasks for this month.</p>
+            <p className="text-muted-foreground">Everything on the board, across all projects.</p>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard label="Open" value={stats?.openCount ?? "—"} icon={<CircleDot className="h-5 w-5" />} />
+            <StatCard label="In progress" value={stats?.inProgressCount ?? "—"} icon={<Loader className="h-5 w-5" />} />
+            <StatCard label="Awaiting review" value={stats?.reviewCount ?? "—"} icon={<Eye className="h-5 w-5" />} />
+            <StatCard label="Due in 7 days" value={stats?.dueSoonCount ?? "—"} icon={<CalendarClock className="h-5 w-5" />} />
           </div>
 
           {/* Filters + Actions */}
@@ -226,6 +240,7 @@ function DashboardContent() {
               onDelete={handleDeleteTask}
               onComplete={handleCompleteTask}
               onAddTask={handleKanbanAddTask}
+              onReview={handleReviewTask}
               onReorder={handleReorderTasks}
             />
           ) : (
@@ -250,7 +265,7 @@ function DashboardContent() {
 
           {/* Done Tasks Section (Collapsed) - Only show in list view */}
           {viewMode === "list" && doneTasks.length > 0 && (
-            <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
+            <Collapsible open={doneOpen || statusFilter === "Done"} onOpenChange={setDoneOpen}>
               <CollapsibleTrigger asChild>
                 <Button
                   variant="ghost"
@@ -260,7 +275,7 @@ function DashboardContent() {
                   <ChevronDown
                     className={cn(
                       "h-4 w-4 transition-transform",
-                      doneOpen && "rotate-180"
+                      (doneOpen || statusFilter === "Done") && "rotate-180"
                     )}
                   />
                 </Button>

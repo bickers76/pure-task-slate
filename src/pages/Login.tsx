@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export default function Login() {
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,23 +22,6 @@ export default function Login() {
       toast.success("Signed in successfully");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign in";
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      toast.error("Please enter email and password");
-      return;
-    }
-    setIsLoading(true);
-    try {
-      await signUp(email, password);
-      toast.success("Check your email to confirm your account");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to sign up";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -95,14 +78,6 @@ export default function Login() {
               className="flex-1"
             >
               {isLoading ? "..." : "Sign In"}
-            </Button>
-            <Button
-              onClick={handleSignUp}
-              disabled={isLoading}
-              variant="outline"
-              className="flex-1"
-            >
-              Sign Up
             </Button>
           </div>
         </div>

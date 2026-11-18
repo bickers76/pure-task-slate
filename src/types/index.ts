@@ -21,6 +21,7 @@ export interface Task {
   sort_order: number;
   assignee: TaskAssignee;
   deliverable: string | null;
+  review_feedback: string | null;
   created_at: string;
   updated_at: string;
   project?: Project;

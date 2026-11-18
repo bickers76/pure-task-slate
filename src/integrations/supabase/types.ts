@@ -45,6 +45,7 @@ export type Database = {
           id: string
           priority: string
           project_id: string
+          review_feedback: string | null
           sort_order: number
           status: string
           tags: string[] | null
@@ -60,6 +61,7 @@ export type Database = {
           id?: string
           priority: string
           project_id: string
+          review_feedback?: string | null
           sort_order?: number
           status: string
           tags?: string[] | null
@@ -75,6 +77,7 @@ export type Database = {
           id?: string
           priority?: string
           project_id?: string
+          review_feedback?: string | null
           sort_order?: number
           status?: string
           tags?: string[] | null

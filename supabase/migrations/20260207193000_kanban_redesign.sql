@@ -1,4 +1,5 @@
 ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS assignee text NOT NULL DEFAULT 'Mervbot';
+ALTER TABLE public.tasks DROP CONSTRAINT IF EXISTS tasks_assignee_check;
 ALTER TABLE public.tasks ADD CONSTRAINT tasks_assignee_check CHECK (assignee IN ('Wayne', 'Mervbot'));
 ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS deliverable text;
 ALTER TABLE public.tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
