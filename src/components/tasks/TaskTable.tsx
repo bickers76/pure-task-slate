@@ -509,7 +509,6 @@ export function TaskTable({
           )}
 
           {sortedTasks.map((task) => {
-            const taskType = task.tags?.[0];
             const isDone = task.status === "Done";
             const isEditingThisTask = editingTaskId === task.id;
 
@@ -524,7 +523,14 @@ export function TaskTable({
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground font-mono text-sm">
-                  {getShortId(task.id)}
+                  <button
+                    type="button"
+                    onClick={() => onEdit?.(task)}
+                    className="whitespace-nowrap hover:text-foreground hover:underline"
+                    title="Open task"
+                  >
+                    {getShortId(task.id)}
+                  </button>
                 </TableCell>
                 {columnVisibility.title && (
                   <TableCell>
@@ -547,15 +553,32 @@ export function TaskTable({
                         )}
                         onClick={() => onInlineEdit && startEditingTitle(task)}
                       >
-                        {taskType && (
-                          <Badge 
-                            variant={getTypeBadgeVariant(taskType)}
+                        {task.tags?.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant={getTypeBadgeVariant(tag)}
                             className="text-xs font-normal shrink-0"
                           >
-                            {taskType}
+                            {tag}
                           </Badge>
-                        )}
+                        ))}
                         <span className="font-medium truncate">{task.title}</span>
+                        {task.blocked_reason && !isDone && (
+                          <span
+                            title={`Blocked: ${task.blocked_reason}`}
+                            className="shrink-0 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400"
+                          >
+                            Blocked
+                          </span>
+                        )}
+                        {task.review_feedback && !isDone && task.status !== "Review" && (
+                          <span
+                            title={`Changes requested: ${task.review_feedback}`}
+                            className="shrink-0 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400"
+                          >
+                            Changes requested
+                          </span>
+                        )}
                       </div>
                     )}
                   </TableCell>

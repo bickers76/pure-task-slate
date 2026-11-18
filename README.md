@@ -1,73 +1,67 @@
-# Welcome to your Lovable project
+# GetShitDone
 
-## Project info
+A task board shared between a person and an AI agent. Tasks belong to projects, are owned by either **Wayne** or **Mervbot**, and move through `Backlog → In Progress → Review → Done`. The agent works the board through an HTTP API; the person reviews its work in the app.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## What it does
 
-## How can I edit this code?
+- **List and kanban views** across all projects (dashboard) or one project, with search, filters, inline editing and drag and drop.
+- **Review workflow:** tasks in Review can be approved, or sent back to In Progress with feedback the agent can read.
+- **Needs you:** one click shows everything waiting on a human: tasks in Review and tasks the agent has flagged as blocked.
+- **Comments** on each task, written from the app or by the agent.
+- **Live updates:** the board refreshes when the agent or another tab changes something.
+- **Bot API** for the agent: see [docs/BOT_API.md](docs/BOT_API.md).
 
-There are several ways of editing your application.
+Keyboard: `n` new task, `/` search, `Esc` clears the search box.
 
-**Use Lovable**
+## Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Vite, React, TypeScript, Tailwind, shadcn/ui, TanStack Query, dnd-kit, and Supabase (Postgres, auth, realtime, one edge function). The project was started in Lovable and syncs with it through this repository.
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Running locally
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev      # http://localhost:8080
+npm test         # unit tests
+npm run lint
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+`.env` holds the Supabase URL and the publishable (anon) key. Both are safe to expose; access is controlled by row-level security.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Database
 
-**Use GitHub Codespaces**
+Schema changes live in `supabase/migrations/` and must be applied to the Supabase project in filename order. They are written to be safe to re-run.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Who can sign in
 
-## What technologies are used for this project?
+There is no sign-up screen. Access to data is limited to accounts listed in the `app_members` table; a signed-in account that is not listed sees an empty board. Everyone who had an account when the access migration ran was added automatically. To add someone later, create the account in Supabase Auth and run:
 
-This project is built with:
+```sql
+INSERT INTO public.app_members (user_id)
+SELECT id FROM auth.users WHERE email = 'person@example.com';
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+To see who has access:
 
-## How can I deploy this project?
+```sql
+SELECT u.email, m.added_at
+FROM public.app_members m JOIN auth.users u ON u.id = m.user_id;
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Bot API secret
 
-## Can I connect a custom domain to my Lovable project?
+The `task-api` edge function needs a `BOT_API_KEY` secret set in Supabase. Never commit its value. An earlier key was committed to this repository's history and must be treated as public: rotate it.
 
-Yes, you can!
+## Layout
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```
+src/pages/                 Dashboard, Projects, ProjectDetail, Login
+src/components/tasks/      Board view, table, kanban, task dialog, comments, review controls
+src/hooks/useTaskBoard.ts  Filters, derived lists and every task action (shared by both pages)
+src/lib/taskOrder.ts       Drag-and-drop ordering
+src/lib/taskFilters.ts     Filtering, "needs you", dashboard counts
+src/lib/repositories/      Supabase queries
+supabase/functions/task-api/  Bot API
+supabase/migrations/       Schema
+```

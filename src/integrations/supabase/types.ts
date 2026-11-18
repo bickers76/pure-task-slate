@@ -35,9 +35,43 @@ export type Database = {
         }
         Relationships: []
       }
+      task_comments: {
+        Row: {
+          author: string
+          body: string
+          created_at: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          author: string
+          body: string
+          created_at?: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee: string
+          blocked_reason: string | null
+          completed_at: string | null
           created_at: string
           deliverable: string | null
           description: string | null
@@ -54,6 +88,8 @@ export type Database = {
         }
         Insert: {
           assignee?: string
+          blocked_reason?: string | null
+          completed_at?: string | null
           created_at?: string
           deliverable?: string | null
           description?: string | null
@@ -70,6 +106,8 @@ export type Database = {
         }
         Update: {
           assignee?: string
+          blocked_reason?: string | null
+          completed_at?: string | null
           created_at?: string
           deliverable?: string | null
           description?: string | null

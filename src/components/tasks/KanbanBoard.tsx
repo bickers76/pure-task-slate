@@ -10,7 +10,8 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Task, TaskStatus, ACTIVE_STATUSES } from "@/types";
+import { Task, TaskStatus, ACTIVE_STATUSES, TASK_STATUSES } from "@/types";
+import { OrderUpdate, applyOrderUpdates, computeReorder } from "@/lib/taskOrder";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
 import { CompletedPanel } from "./CompletedPanel";
@@ -23,7 +24,8 @@ interface KanbanBoardProps {
   onComplete: (task: Task) => void;
   onAddTask: (status: TaskStatus) => void;
   onReview?: (task: Task, decision: ReviewDecision) => void;
-  onReorder: (updates: { id: string; sort_order: number; status?: TaskStatus }[]) => void;
+  onUnblock?: (task: Task) => void;
+  onReorder: (updates: OrderUpdate[]) => void;
 }
 
 export function KanbanBoard({
@@ -33,6 +35,7 @@ export function KanbanBoard({
   onComplete,
   onAddTask,
   onReview,
+  onUnblock,
   onReorder,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -79,86 +82,46 @@ export function KanbanBoard({
     }
   };
 
+  const columnOf = (overId: string): TaskStatus | undefined =>
+    (TASK_STATUSES as string[]).includes(overId)
+      ? (overId as TaskStatus)
+      : localTasks.find((t) => t.id === overId)?.status;
+
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
     const activeId = active.id as string;
-    const overId = over.id as string;
+    const dragged = localTasks.find((t) => t.id === activeId);
+    const newStatus = columnOf(over.id as string);
 
-    const activeTask = localTasks.find((t) => t.id === activeId);
-    if (!activeTask) return;
-
-    // Check if dropping over a column (only active statuses are droppable columns)
-    const isOverColumn = ACTIVE_STATUSES.includes(overId as TaskStatus);
-    const newStatus = isOverColumn
-      ? (overId as TaskStatus)
-      : localTasks.find((t) => t.id === overId)?.status;
-
-    if (newStatus && newStatus !== activeTask.status && ACTIVE_STATUSES.includes(newStatus)) {
-      setLocalTasks((prev) => {
-        return prev.map((t) =>
-          t.id === activeId ? { ...t, status: newStatus } : t
-        );
-      });
+    // Preview the move between the open columns; Done only takes the drop.
+    if (dragged && newStatus && newStatus !== dragged.status && ACTIVE_STATUSES.includes(newStatus)) {
+      setLocalTasks((prev) =>
+        prev.map((t) => (t.id === activeId ? { ...t, status: newStatus } : t))
+      );
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
-
     if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
+    const targetStatus = columnOf(overId);
+    if (!targetStatus) return;
 
-    const activeTask = localTasks.find((t) => t.id === activeId);
-    if (!activeTask) return;
-
-    // Determine target status
-    const isOverColumn = ACTIVE_STATUSES.includes(overId as TaskStatus);
-    const targetStatus = isOverColumn
-      ? (overId as TaskStatus)
-      : localTasks.find((t) => t.id === overId)?.status || activeTask.status;
-
-    // Get tasks in target status
-    const targetTasks = localTasks
-      .filter((t) => t.status === targetStatus && t.id !== activeId)
-      .sort((a, b) => a.sort_order - b.sort_order);
-
-    // Find insertion index
-    let newIndex = targetTasks.length;
-    if (!isOverColumn) {
-      const overIndex = targetTasks.findIndex((t) => t.id === overId);
-      if (overIndex !== -1) {
-        newIndex = overIndex;
-      }
+    // Work from the saved state: the drag preview has already moved the card locally.
+    const isColumn = (TASK_STATUSES as string[]).includes(overId);
+    const updates = computeReorder(tasks, activeId, targetStatus, isColumn ? null : overId);
+    if (updates.length === 0) {
+      setLocalTasks(tasks);
+      return;
     }
 
-    // Insert active task at new position
-    const reorderedTasks = [...targetTasks];
-    reorderedTasks.splice(newIndex, 0, { ...activeTask, status: targetStatus });
-
-    // Generate updates
-    const updates = reorderedTasks.map((task, index) => ({
-      id: task.id,
-      sort_order: index,
-      status: targetStatus,
-    }));
-
-    // Update local state
-    setLocalTasks((prev) => {
-      const otherTasks = prev.filter(
-        (t) => t.status !== targetStatus && t.id !== activeId
-      );
-      return [
-        ...otherTasks,
-        ...reorderedTasks.map((t, i) => ({ ...t, sort_order: i })),
-      ];
-    });
-
-    // Persist changes
+    setLocalTasks(applyOrderUpdates(tasks, updates));
     onReorder(updates);
   };
 
@@ -183,6 +146,7 @@ export function KanbanBoard({
               onComplete={onComplete}
               onAddTask={onAddTask}
               onReview={onReview}
+              onUnblock={onUnblock}
             />
           ))}
         </div>
@@ -197,12 +161,12 @@ export function KanbanBoard({
             </div>
           )}
         </DragOverlay>
-      </DndContext>
 
-      {/* Completed panel — right side on desktop, bottom on mobile */}
-      <div className="border-t md:border-t-0 md:border-l border-border p-3 md:p-4 md:pl-0 shrink-0">
-        <CompletedPanel tasks={tasksByStatus.Done} onEdit={onEdit} />
-      </div>
+        {/* Completed panel — right side on desktop, bottom on mobile */}
+        <div className="border-t md:border-t-0 md:border-l border-border p-3 md:p-4 md:pl-0 shrink-0">
+          <CompletedPanel tasks={tasksByStatus.Done} onEdit={onEdit} isDragging={!!activeTask} />
+        </div>
+      </DndContext>
     </div>
   );
 }

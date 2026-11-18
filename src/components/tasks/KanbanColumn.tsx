@@ -15,6 +15,7 @@ interface KanbanColumnProps {
   onComplete?: (task: Task) => void;
   onAddTask?: (status: TaskStatus) => void;
   onReview?: (task: Task, decision: ReviewDecision) => void;
+  onUnblock?: (task: Task) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -32,6 +33,7 @@ export function KanbanColumn({
   onComplete,
   onAddTask,
   onReview,
+  onUnblock,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
@@ -74,6 +76,7 @@ export function KanbanColumn({
               onDelete={onDelete}
               onComplete={onComplete}
               onReview={onReview}
+              onUnblock={onUnblock}
             />
           ))}
         </div>

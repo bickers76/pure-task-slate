@@ -1,31 +1,13 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { AppShell, useAppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/layout/TopBar";
-import { Button } from "@/components/ui/button";
-import { TaskFilters, ColumnVisibility, ViewMode } from "@/components/tasks/TaskFilters";
-import { TaskTable, QuickAddData, InlineEditData } from "@/components/tasks/TaskTable";
-import { TaskDialog } from "@/components/tasks/TaskDialog";
-import { KanbanBoard } from "@/components/tasks/KanbanBoard";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { useProject } from "@/hooks/useProjects";
-import {
-  useProjectTasks,
-  useCreateTask,
-  useUpdateTask,
-  useDeleteTask,
-  useReorderTasks,
-} from "@/hooks/useTasks";
-import { useProjects } from "@/hooks/useProjects";
-import { Task, TaskStatus, TaskPriority, TaskAssignee, ACTIVE_STATUSES } from "@/types";
-import { toast } from "sonner";
-import { useReviewTask } from "@/hooks/useTaskActions";
-import { cn } from "@/lib/utils";
+import { TaskBoardView } from "@/components/tasks/TaskBoardView";
+import { useProject, useProjects } from "@/hooks/useProjects";
+import { useProjectTasks } from "@/hooks/useTasks";
+import { useTaskBoard } from "@/hooks/useTaskBoard";
+import { needsAttention } from "@/lib/taskFilters";
 
 function ProjectDetailContent() {
   const { openMobileMenu } = useAppShell();
@@ -33,157 +15,8 @@ function ProjectDetailContent() {
   const { data: project, isLoading: projectLoading } = useProject(projectId);
   const { data: tasks = [], isLoading: tasksLoading } = useProjectTasks(projectId);
   const { data: projects = [] } = useProjects();
-
-  const createTaskMutation = useCreateTask();
-  const updateTaskMutation = useUpdateTask();
-  const deleteTaskMutation = useDeleteTask();
-  const reorderTasksMutation = useReorderTasks();
-  const handleReviewTask = useReviewTask();
-
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
-  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
-  const [assigneeFilter, setAssigneeFilter] = useState<TaskAssignee | "all">("all");
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("Backlog");
-  const [doneOpen, setDoneOpen] = useState(false);
-  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
-    title: true,
-    project: false,
-    status: true,
-    priority: true,
-    dueDate: true,
-  });
-
-  // Apply filters
-  const filterTask = useCallback((task: Task) => {
-    if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (statusFilter !== "all" && task.status !== statusFilter) return false;
-    if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
-    if (assigneeFilter !== "all" && task.assignee !== assigneeFilter) return false;
-    return true;
-  }, [search, statusFilter, priorityFilter, assigneeFilter]);
-
-  const activeTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      if (!ACTIVE_STATUSES.includes(task.status)) return false;
-      return filterTask(task);
-    });
-  }, [tasks, filterTask]);
-
-  const doneTasks = useMemo(() => {
-    return tasks.filter((task) => task.status === "Done" && filterTask(task));
-  }, [tasks, filterTask]);
-
-  // For kanban view — pass all tasks (KanbanBoard handles splitting by status)
-  const kanbanTasks = useMemo(() => {
-    return tasks.filter(filterTask);
-  }, [tasks, filterTask]);
-
-  const handleSaveTask = async (data: {
-    project_id: string;
-    title: string;
-    description: string | null;
-    status: TaskStatus;
-    priority: TaskPriority;
-    due_date: string | null;
-    assignee: TaskAssignee;
-    deliverable: string | null;
-  }) => {
-    try {
-      if (editingTask) {
-        await updateTaskMutation.mutateAsync({
-          id: editingTask.id,
-          updates: data,
-        });
-        toast.success("Task updated");
-      } else {
-        await createTaskMutation.mutateAsync(data);
-        toast.success("Task created");
-      }
-      setEditingTask(null);
-    } catch {
-      toast.error("Failed to save task");
-    }
-  };
-
-  const handleDeleteTask = async (task: Task) => {
-    try {
-      await deleteTaskMutation.mutateAsync(task.id);
-      toast.success("Task deleted");
-    } catch {
-      toast.error("Failed to delete task");
-    }
-  };
-
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setDefaultStatus(task.status);
-    setTaskDialogOpen(true);
-  };
-
-  const handleAddTask = (status?: TaskStatus) => {
-    setEditingTask(null);
-    setDefaultStatus(status || "Backlog");
-    setTaskDialogOpen(true);
-  };
-
-  const handleReorder = async (updates: { id: string; sort_order: number; status?: TaskStatus }[]) => {
-    try {
-      await reorderTasksMutation.mutateAsync(updates);
-    } catch {
-      toast.error("Failed to reorder tasks");
-    }
-  };
-
-  const handleInlineEdit = async (data: InlineEditData) => {
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: data.id,
-        updates: {
-          ...(data.title !== undefined && { title: data.title }),
-          ...(data.status !== undefined && { status: data.status }),
-          ...(data.priority !== undefined && { priority: data.priority }),
-          ...(data.due_date !== undefined && { due_date: data.due_date }),
-          ...(data.assignee !== undefined && { assignee: data.assignee }),
-        },
-      });
-    } catch {
-      toast.error("Failed to update task");
-    }
-  };
-
-  const handleQuickAddTask = async (data: QuickAddData) => {
-    try {
-      await createTaskMutation.mutateAsync({
-        project_id: projectId!,
-        title: data.title,
-        description: null,
-        status: data.status,
-        priority: data.priority,
-        due_date: data.due_date,
-        assignee: data.assignee,
-      });
-      toast.success("Task created");
-    } catch {
-      toast.error("Failed to create task");
-    }
-  };
-
-  const handleCompleteTask = async (task: Task) => {
-    try {
-      const newStatus: TaskStatus = task.status === "Done" ? "Backlog" : "Done";
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        updates: { status: newStatus },
-      });
-      toast.success(newStatus === "Done" ? "Task completed!" : "Task reopened");
-    } catch {
-      toast.error("Failed to update task");
-    }
-  };
+  const board = useTaskBoard(tasks, projectId);
+  const attentionCount = useMemo(() => tasks.filter(needsAttention).length, [tasks]);
 
   if (projectLoading) {
     return (
@@ -216,12 +49,9 @@ function ProjectDetailContent() {
 
   return (
     <>
-      <TopBar
-        onMenuClick={openMobileMenu}
-        title={project.name}
-      />
+      <TopBar onMenuClick={openMobileMenu} title={project.name} />
 
-      <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-6 py-2">
+      <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 md:px-6 py-2">
         <Link
           to="/projects"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -230,111 +60,22 @@ function ProjectDetailContent() {
           Projects
         </Link>
         <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-medium">{project.name}</span>
+        <span className="text-sm font-medium truncate">{project.name}</span>
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="border-b border-border bg-background p-4">
-          <TaskFilters
-            search={search}
-            onSearchChange={setSearch}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            priorityFilter={priorityFilter}
-            onPriorityFilterChange={setPriorityFilter}
-            assigneeFilter={assigneeFilter}
-            onAssigneeFilterChange={setAssigneeFilter}
-            onAddTask={() => handleAddTask()}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            columnVisibility={columnVisibility}
-            onColumnVisibilityChange={setColumnVisibility}
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
+        <div className="space-y-4 md:space-y-6 p-2 md:p-6">
+          <TaskBoardView
+            board={board}
+            projects={projects.length > 0 ? projects : [project]}
+            totalTasks={tasks.length}
+            attentionCount={attentionCount}
+            isLoading={tasksLoading}
+            projectId={projectId}
+            showProjectColumn={false}
           />
         </div>
-
-        {viewMode === "list" ? (
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
-            <div className="space-y-6 p-6">
-              {tasksLoading ? (
-                <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                  Loading tasks...
-                </div>
-              ) : (
-                <>
-                  <TaskTable
-                    tasks={activeTasks}
-                    projects={[project]}
-                    onEdit={handleEditTask}
-                    onDelete={handleDeleteTask}
-                    onComplete={handleCompleteTask}
-                    onQuickAdd={handleQuickAddTask}
-                    onInlineEdit={handleInlineEdit}
-                    columnVisibility={columnVisibility}
-                  />
-
-                  {activeTasks.length === 0 && statusFilter !== "Done" && (
-                    <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                      {tasks.length === 0
-                        ? "No tasks yet. Create your first task to get started."
-                        : "No tasks match your filters."}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {doneTasks.length > 0 && (
-                <Collapsible open={doneOpen || statusFilter === "Done"} onOpenChange={setDoneOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex w-full items-center justify-between px-4 py-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <span className="font-medium">Done ({doneTasks.length})</span>
-                      <ChevronDown
-                        className={cn(
-                          "h-4 w-4 transition-transform",
-                          (doneOpen || statusFilter === "Done") && "rotate-180"
-                        )}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <TaskTable
-                      tasks={doneTasks}
-                      projects={[project]}
-                      onEdit={handleEditTask}
-                      onDelete={handleDeleteTask}
-                      onComplete={handleCompleteTask}
-                      onInlineEdit={handleInlineEdit}
-                      columnVisibility={columnVisibility}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </div>
-          </div>
-        ) : (
-          <KanbanBoard
-            tasks={kanbanTasks}
-            onEdit={handleEditTask}
-            onDelete={handleDeleteTask}
-            onComplete={handleCompleteTask}
-            onAddTask={handleAddTask}
-            onReview={handleReviewTask}
-            onReorder={handleReorder}
-          />
-        )}
       </div>
-
-      <TaskDialog
-        open={taskDialogOpen}
-        onOpenChange={setTaskDialogOpen}
-        task={editingTask}
-        projects={projects}
-        defaultProjectId={projectId}
-        defaultStatus={defaultStatus}
-        onSave={handleSaveTask}
-      />
     </>
   );
 }

@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/select";
 import { Task, Project, TaskStatus, TaskPriority, TaskAssignee, TASK_STATUSES, TASK_PRIORITIES, TASK_ASSIGNEES } from "@/types";
 import { cn } from "@/lib/utils";
+import { parseTags } from "@/lib/taskFilters";
+import { TaskFormData } from "@/hooks/useTaskBoard";
+import { TaskComments } from "./TaskComments";
 
 interface TaskDialogProps {
   open: boolean;
@@ -26,16 +29,7 @@ interface TaskDialogProps {
   projects: Project[];
   defaultProjectId?: string;
   defaultStatus?: TaskStatus | null;
-  onSave: (data: {
-    project_id: string;
-    title: string;
-    description: string | null;
-    status: TaskStatus;
-    priority: TaskPriority;
-    due_date: string | null;
-    assignee: TaskAssignee;
-    deliverable: string | null;
-  }) => Promise<void>;
+  onSave: (data: TaskFormData) => Promise<void>;
 }
 
 export function TaskDialog({
@@ -55,6 +49,7 @@ export function TaskDialog({
   const [dueDate, setDueDate] = useState("");
   const [assignee, setAssignee] = useState<TaskAssignee>("Mervbot");
   const [deliverable, setDeliverable] = useState("");
+  const [tags, setTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -67,6 +62,7 @@ export function TaskDialog({
       setDueDate(task.due_date || "");
       setAssignee(task.assignee || "Mervbot");
       setDeliverable(task.deliverable || "");
+      setTags(task.tags?.join(", ") || "");
     } else {
       setProjectId(defaultProjectId || "");
       setTitle("");
@@ -76,8 +72,12 @@ export function TaskDialog({
       setDueDate("");
       setAssignee("Mervbot");
       setDeliverable("");
+      setTags("");
     }
-  }, [task, defaultProjectId, open, defaultStatus]);
+    // Reset only when the dialog opens or a different task is loaded, so a live
+    // refresh of the same task doesn't wipe what is being typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, defaultProjectId, open, defaultStatus]);
 
   const handleSubmit = async () => {
     if (!title.trim() || !projectId) return;
@@ -92,8 +92,11 @@ export function TaskDialog({
         due_date: dueDate || null,
         assignee,
         deliverable: deliverable.trim() || null,
+        tags: parseTags(tags),
       });
       onOpenChange(false);
+    } catch {
+      // The caller reports the failure; keep the dialog open so nothing is lost.
     } finally {
       setIsSubmitting(false);
     }
@@ -103,11 +106,29 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Task" : "Create Task"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          {isEdit && task?.blocked_reason && task.status !== "Done" && (
+            <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
+                Blocked — needs input
+              </p>
+              <p className="text-sm whitespace-pre-wrap">{task.blocked_reason}</p>
+            </div>
+          )}
+
+          {isEdit && task?.review_feedback && task.status !== "Done" && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                Changes requested
+              </p>
+              <p className="text-sm whitespace-pre-wrap">{task.review_feedback}</p>
+            </div>
+          )}
+
           {!isEdit && (
             <div className="space-y-2">
               <Label htmlFor="task-project">Project</Label>
@@ -216,6 +237,17 @@ export function TaskDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="task-tags">Tags</Label>
+            <Input
+              id="task-tags"
+              placeholder="bug, research, newsletter"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Separate tags with commas</p>
+          </div>
+
           {/* Deliverable */}
           <div className="space-y-2">
             <Label htmlFor="task-deliverable">Deliverable</Label>
@@ -237,6 +269,12 @@ export function TaskDialog({
           >
             {isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Create Task"}
           </Button>
+
+          {isEdit && task && (
+            <div className="border-t border-border pt-4">
+              <TaskComments taskId={task.id} />
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
