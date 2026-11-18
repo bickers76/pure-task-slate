@@ -20,8 +20,16 @@ const UPDATABLE_FIELDS = [
   'tags',
   'deliverable',
   'review_feedback',
+  'blocked_reason',
   'sort_order',
 ];
+
+function json(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 // Compare secrets without leaking how many leading characters matched.
 function safeEqual(a: string, b: string): boolean {
@@ -85,6 +93,18 @@ Deno.serve(async (req) => {
         let query = supabase.from('tasks').select('*, project:projects(*)');
         if (project_id) {
           query = query.eq('project_id', project_id);
+        }
+        if (body.status) {
+          if (!VALID_STATUSES.includes(body.status)) {
+            return json({ success: false, error: `status must be one of: ${VALID_STATUSES.join(', ')}` }, 400);
+          }
+          query = query.eq('status', body.status);
+        }
+        if (body.assignee) {
+          if (!VALID_ASSIGNEES.includes(body.assignee)) {
+            return json({ success: false, error: `assignee must be one of: ${VALID_ASSIGNEES.join(', ')}` }, 400);
+          }
+          query = query.eq('assignee', body.assignee);
         }
         const { data: tasks, error } = await query.order('created_at', { ascending: false });
         
@@ -272,6 +292,62 @@ Deno.serve(async (req) => {
         );
       }
 
+      // ===== SINGLE TASK + COMMENTS =====
+
+      case 'get': {
+        if (!id) return json({ success: false, error: 'id is required for get' }, 400);
+
+        const { data: task, error } = await supabase
+          .from('tasks')
+          .select('*, project:projects(*)')
+          .eq('id', id)
+          .maybeSingle();
+        if (error) return json({ success: false, error: error.message }, 400);
+        if (!task) return json({ success: false, error: 'Task not found' }, 404);
+
+        const { data: comments, error: commentsError } = await supabase
+          .from('task_comments')
+          .select('*')
+          .eq('task_id', id)
+          .order('created_at', { ascending: true });
+        if (commentsError) return json({ success: false, error: commentsError.message }, 400);
+
+        return json({ success: true, data: { ...task, comments } });
+      }
+
+      case 'list-comments': {
+        if (!id) return json({ success: false, error: 'id (task id) is required for list-comments' }, 400);
+
+        const { data: comments, error } = await supabase
+          .from('task_comments')
+          .select('*')
+          .eq('task_id', id)
+          .order('created_at', { ascending: true });
+        if (error) return json({ success: false, error: error.message }, 400);
+
+        return json({ success: true, data: comments });
+      }
+
+      case 'add-comment': {
+        if (!id) return json({ success: false, error: 'id (task id) is required for add-comment' }, 400);
+        const commentBody = typeof data?.body === 'string' ? data.body.trim() : '';
+        if (!commentBody) return json({ success: false, error: 'data.body is required for add-comment' }, 400);
+        const author = data?.author || 'Mervbot';
+        if (!VALID_ASSIGNEES.includes(author)) {
+          return json({ success: false, error: `author must be one of: ${VALID_ASSIGNEES.join(', ')}` }, 400);
+        }
+
+        const { data: comment, error } = await supabase
+          .from('task_comments')
+          .insert({ task_id: id, author, body: commentBody })
+          .select('*')
+          .single();
+        if (error) return json({ success: false, error: error.message }, 400);
+
+        console.log('Added comment to task:', id);
+        return json({ success: true, data: comment });
+      }
+
       // ===== PROJECT ACTIONS =====
 
       case 'list-projects': {
@@ -353,7 +429,7 @@ Deno.serve(async (req) => {
 
       default:
         return new Response(
-          JSON.stringify({ success: false, error: `Unknown action: ${action}. Valid actions: list, create, update, delete, list-projects, create-project, delete-project` }),
+          JSON.stringify({ success: false, error: `Unknown action: ${action}. Valid actions: list, get, create, update, delete, list-comments, add-comment, list-projects, create-project, delete-project` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }

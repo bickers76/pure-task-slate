@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tasksRepo, CreateTaskInput, UpdateTaskInput } from "@/lib/repositories/tasksRepo";
-import { TaskStatus } from "@/types";
+import { Task } from "@/types";
+import { OrderUpdate } from "@/lib/taskOrder";
 
 export function useTasks() {
   return useQuery({
@@ -32,7 +33,6 @@ export function useCreateTask() {
     mutationFn: (input: CreateTaskInput) => tasksRepo.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["stats"] });
     },
   });
 }
@@ -45,7 +45,6 @@ export function useUpdateTask() {
       tasksRepo.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["stats"] });
     },
   });
 }
@@ -57,7 +56,17 @@ export function useDeleteTask() {
     mutationFn: (id: string) => tasksRepo.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["stats"] });
+    },
+  });
+}
+
+export function useRestoreTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (task: Task) => tasksRepo.restore(task),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -66,26 +75,10 @@ export function useReorderTasks() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (updates: { id: string; sort_order: number; status?: TaskStatus }[]) =>
+    mutationFn: (updates: OrderUpdate[]) =>
       tasksRepo.reorderTasks(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["stats"] });
-    },
-  });
-}
-
-export function useTaskStats() {
-  return useQuery({
-    queryKey: ["stats"],
-    queryFn: async () => {
-      const [openCount, inProgressCount, reviewCount, dueSoonCount] = await Promise.all([
-        tasksRepo.getOpenCount(),
-        tasksRepo.getInProgressCount(),
-        tasksRepo.getReviewCount(),
-        tasksRepo.getDueSoonCount(),
-      ]);
-      return { openCount, inProgressCount, reviewCount, dueSoonCount };
     },
   });
 }

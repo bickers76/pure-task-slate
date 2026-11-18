@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { addDays, format } from "date-fns";
 import { Task, TaskStatus, TaskPriority, TaskAssignee } from "@/types";
 
 export interface CreateTaskInput {
@@ -25,6 +24,7 @@ export interface UpdateTaskInput {
   assignee?: TaskAssignee;
   deliverable?: string | null;
   review_feedback?: string | null;
+  blocked_reason?: string | null;
 }
 
 export const tasksRepo = {
@@ -105,6 +105,35 @@ export const tasksRepo = {
     return data as Task;
   },
 
+  /** Puts a deleted task back with its original id, position and timestamps. */
+  async restore(task: Task): Promise<Task> {
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        id: task.id,
+        project_id: task.project_id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        due_date: task.due_date,
+        tags: task.tags,
+        assignee: task.assignee,
+        deliverable: task.deliverable,
+        sort_order: task.sort_order,
+        created_at: task.created_at,
+        // Only send the newer columns when they hold something, so restore
+        // still works on a database that hasn't had those migrations applied.
+        ...(task.review_feedback && { review_feedback: task.review_feedback }),
+        ...(task.blocked_reason && { blocked_reason: task.blocked_reason }),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Task;
+  },
+
   async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from("tasks")
@@ -126,53 +155,5 @@ export const tasksRepo = {
 
     const failed = results.find((r) => r.error);
     if (failed?.error) throw failed.error;
-  },
-
-  // Stats helpers
-  async getOpenCount(): Promise<number> {
-    const { count, error } = await supabase
-      .from("tasks")
-      .select("*", { count: "exact", head: true })
-      .neq("status", "Done");
-
-    if (error) throw error;
-    return count || 0;
-  },
-
-  async getInProgressCount(): Promise<number> {
-    const { count, error } = await supabase
-      .from("tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "In Progress");
-
-    if (error) throw error;
-    return count || 0;
-  },
-
-  async getReviewCount(): Promise<number> {
-    const { count, error } = await supabase
-      .from("tasks")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "Review");
-
-    if (error) throw error;
-    return count || 0;
-  },
-
-  async getDueSoonCount(): Promise<number> {
-    // due_date is a plain calendar date, so compare against local dates, not UTC.
-    const now = new Date();
-    const weekFromNow = addDays(now, 7);
-
-    const { count, error } = await supabase
-      .from("tasks")
-      .select("*", { count: "exact", head: true })
-      .neq("status", "Done")
-      .not("due_date", "is", null)
-      .lte("due_date", format(weekFromNow, "yyyy-MM-dd"))
-      .gte("due_date", format(now, "yyyy-MM-dd"));
-
-    if (error) throw error;
-    return count || 0;
   },
 };

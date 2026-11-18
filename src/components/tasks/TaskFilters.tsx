@@ -1,4 +1,6 @@
-import { Search, CirclePlus, SlidersHorizontal, LayoutList, Kanban } from "lucide-react";
+import { RefObject } from "react";
+import { Search, CirclePlus, SlidersHorizontal, LayoutList, Kanban, BellRing } from "lucide-react";
+import { TaskFilterState } from "@/lib/taskFilters";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,35 +31,28 @@ export interface ColumnVisibility {
 }
 
 interface TaskFiltersProps {
-  search: string;
-  onSearchChange: (value: string) => void;
-  statusFilter: TaskStatus | "all";
-  onStatusFilterChange: (value: TaskStatus | "all") => void;
-  priorityFilter: TaskPriority | "all";
-  onPriorityFilterChange: (value: TaskPriority | "all") => void;
-  assigneeFilter: TaskAssignee | "all";
-  onAssigneeFilterChange: (value: TaskAssignee | "all") => void;
+  filters: TaskFilterState;
+  onFiltersChange: (patch: Partial<TaskFilterState>) => void;
+  /** How many tasks currently need attention; shown on the toggle. */
+  attentionCount?: number;
   onAddTask?: () => void;
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
   columnVisibility?: ColumnVisibility;
   onColumnVisibilityChange?: (visibility: ColumnVisibility) => void;
+  searchInputRef?: RefObject<HTMLInputElement>;
 }
 
 export function TaskFilters({
-  search,
-  onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
-  priorityFilter,
-  onPriorityFilterChange,
-  assigneeFilter,
-  onAssigneeFilterChange,
+  filters,
+  onFiltersChange,
+  attentionCount = 0,
   onAddTask,
   viewMode = "list",
   onViewModeChange,
   columnVisibility = { title: true, project: true, status: true, priority: true, dueDate: true },
   onColumnVisibilityChange,
+  searchInputRef,
 }: TaskFiltersProps) {
   const handleColumnToggle = (column: keyof ColumnVisibility) => {
     if (onColumnVisibilityChange) {
@@ -78,6 +73,26 @@ export function TaskFilters({
           onClick={onAddTask}
         >
           Add Task
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          aria-pressed={filters.attentionOnly}
+          title="Show only tasks waiting on you: in Review or flagged as blocked"
+          className={cn(
+            "h-11 md:h-9 gap-2",
+            filters.attentionOnly && "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+          )}
+          onClick={() => onFiltersChange({ attentionOnly: !filters.attentionOnly })}
+        >
+          <BellRing className="h-4 w-4" />
+          <span>Needs you</span>
+          {attentionCount > 0 && (
+            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-semibold text-white">
+              {attentionCount}
+            </span>
+          )}
         </Button>
 
         {/* View Options Dropdown */}
@@ -127,9 +142,16 @@ export function TaskFilters({
         <div className="relative w-full sm:w-[180px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Filter tasks..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            ref={searchInputRef}
+            placeholder="Filter tasks...  ( / )"
+            value={filters.search}
+            onChange={(e) => onFiltersChange({ search: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                onFiltersChange({ search: "" });
+                e.currentTarget.blur();
+              }
+            }}
             className="pl-9 h-11 md:h-9"
           />
         </div>
@@ -142,10 +164,10 @@ export function TaskFilters({
           {(["all", ...TASK_ASSIGNEES] as const).map((val) => (
             <button
               key={val}
-              onClick={() => onAssigneeFilterChange(val as TaskAssignee | "all")}
+              onClick={() => onFiltersChange({ assignee: val as TaskAssignee | "all" })}
               className={cn(
                 "h-11 md:h-9 px-3 text-xs font-medium transition-colors min-w-[44px]",
-                assigneeFilter === val
+                filters.assignee === val
                   ? "bg-foreground text-background"
                   : "bg-background text-muted-foreground hover:bg-muted"
               )}
@@ -155,10 +177,10 @@ export function TaskFilters({
           ))}
         </div>
 
-        <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as TaskStatus | "all")}>
+        <Select value={filters.status} onValueChange={(v) => onFiltersChange({ status: v as TaskStatus | "all" })}>
           <SelectTrigger className="w-auto h-11 md:h-9 gap-2 border-border">
             <CirclePlus className="h-4 w-4 text-muted-foreground" />
-            <span>Status</span>
+            <span>{filters.status === "all" ? "Status" : filters.status}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
@@ -169,10 +191,10 @@ export function TaskFilters({
             ))}
           </SelectContent>
         </Select>
-        <Select value={priorityFilter} onValueChange={(v) => onPriorityFilterChange(v as TaskPriority | "all")}>
+        <Select value={filters.priority} onValueChange={(v) => onFiltersChange({ priority: v as TaskPriority | "all" })}>
           <SelectTrigger className="w-auto h-11 md:h-9 gap-2 border-border">
             <CirclePlus className="h-4 w-4 text-muted-foreground" />
-            <span>Priority</span>
+            <span>{filters.priority === "all" ? "Priority" : filters.priority}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Priority</SelectItem>

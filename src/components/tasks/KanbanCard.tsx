@@ -20,9 +20,10 @@ interface KanbanCardProps {
   onDelete: (task: Task) => void;
   onComplete?: (task: Task) => void;
   onReview?: (task: Task, decision: ReviewDecision) => void;
+  onUnblock?: (task: Task) => void;
 }
 
-export function KanbanCard({ task, onEdit, onDelete, onComplete, onReview }: KanbanCardProps) {
+export function KanbanCard({ task, onEdit, onDelete, onComplete, onReview, onUnblock }: KanbanCardProps) {
   const [expanded, setExpanded] = useState(false);
   const {
     attributes,
@@ -75,13 +76,7 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete, onReview }: Kan
                   <CheckCircle2 className="h-4 w-4" />
                 </button>
               )}
-              <button
-                onClick={() => hasDetails && setExpanded(!expanded)}
-                className={cn(
-                  "text-left",
-                  hasDetails && "cursor-pointer"
-                )}
-              >
+              <button onClick={() => onEdit(task)} className="text-left" title="Open task">
                 <p className="text-sm font-semibold leading-snug text-foreground tracking-tight line-clamp-3">
                   {task.title}
                 </p>
@@ -160,6 +155,16 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete, onReview }: Kan
               )}
             />
 
+            {/* Tags */}
+            {task.tags?.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
+
             {/* Due date */}
             {dueDate && (
               <span
@@ -172,6 +177,29 @@ export function KanbanCard({ task, onEdit, onDelete, onComplete, onReview }: Kan
               </span>
             )}
           </div>
+
+          {/* Raised by the assignee when it can't continue without input */}
+          {task.blocked_reason && task.status !== "Done" && (
+            <div className="rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
+                  Blocked — needs input
+                </p>
+                {onUnblock && (
+                  <button
+                    type="button"
+                    onClick={() => onUnblock(task)}
+                    className="text-[11px] font-medium text-red-600 underline-offset-2 hover:underline dark:text-red-400"
+                  >
+                    Resolve
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                {task.blocked_reason}
+              </p>
+            </div>
+          )}
 
           {/* Feedback from the last review round */}
           {task.review_feedback && task.status !== "Done" && (

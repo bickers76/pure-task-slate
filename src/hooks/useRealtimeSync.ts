@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Keeps cached tasks/projects fresh when they change elsewhere
+ * Keeps cached tasks, projects and comments fresh when they change elsewhere
  * (another tab, or the bot writing through the task-api function).
  */
 export function useRealtimeSync() {
@@ -14,7 +14,9 @@ export function useRealtimeSync() {
       .channel("board-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
         queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["stats"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_comments" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["comments"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "projects" }, () => {
         queryClient.invalidateQueries({ queryKey: ["projects"] });
