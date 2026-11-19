@@ -1,26 +1,10 @@
-import { supabase } from "@/integrations/supabase/client";
-import { TaskAssignee, TaskComment } from "@/types";
+import { api } from "@/lib/api";
+import { TaskComment } from "@/types";
 
 export const commentsRepo = {
-  async listByTask(taskId: string): Promise<TaskComment[]> {
-    const { data, error } = await supabase
-      .from("task_comments")
-      .select("*")
-      .eq("task_id", taskId)
-      .order("created_at", { ascending: true });
+  listByTask: (taskId: string) => api<TaskComment[]>(`/tasks/${taskId}/comments`),
 
-    if (error) throw error;
-    return data as TaskComment[];
-  },
-
-  async create(taskId: string, author: TaskAssignee, body: string): Promise<TaskComment> {
-    const { data, error } = await supabase
-      .from("task_comments")
-      .insert({ task_id: taskId, author, body })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as TaskComment;
-  },
+  /** The server records the signed-in person as the author. */
+  create: (taskId: string, body: string) =>
+    api<TaskComment>(`/tasks/${taskId}/comments`, { method: "POST", body: { body } }),
 };

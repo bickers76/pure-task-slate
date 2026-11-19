@@ -5,6 +5,7 @@ export function useProjects() {
   return useQuery({
     queryKey: ["projects"],
     queryFn: () => projectsRepo.list(),
+    refetchInterval: 60_000,
   });
 }
 

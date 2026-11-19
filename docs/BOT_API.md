@@ -3,10 +3,12 @@
 One endpoint, used by the agent to work the board.
 
 ```
-POST https://<project-ref>.supabase.co/functions/v1/task-api
-Authorization: Bearer <BOT_API_KEY>
+POST https://<your-app-address>/api/bot
+Authorization: Bearer <key>
 Content-Type: application/json
 ```
+
+Create a key in the app under **Settings → Bot API keys**. It is shown once; only a hash is stored. Revoking a key there stops it working immediately. The Settings page also shows the exact endpoint address.
 
 Every request body has an `action`. Every response is JSON:
 
@@ -14,8 +16,6 @@ Every request body has an `action`. Every response is JSON:
 { "success": true, "data": ... }
 { "success": false, "error": "message" }
 ```
-
-`BOT_API_KEY` is a Supabase function secret. Keep it out of the repository.
 
 ## Allowed values
 
@@ -31,18 +31,18 @@ Every request body has an `action`. Every response is JSON:
 |---|---|---|
 | `list` | optional `project_id`, `status`, `assignee` | Newest first, each task includes its `project`. |
 | `get` | `id` | One task with its `project` and `comments`. |
-| `create` | `data: { project_id, title, ... }` | `project_id` and `title` required. Defaults: `Backlog`, `Medium`, `Mervbot`. |
+| `create` | `data: { project_id, title, ... }` | `project_id` and `title` required. Defaults: `Backlog`, `Medium`, assigned to the key's agent. |
 | `update` | `id`, `data: { ... }` | Only the fields below can be changed. |
 | `delete` | `id` | |
 
-Fields `update` accepts: `title`, `description`, `status`, `priority`, `assignee`, `due_date` (`YYYY-MM-DD`), `tags` (array of strings), `deliverable`, `review_feedback`, `blocked_reason`, `sort_order`. Anything else is ignored; a request with none of them is rejected.
+Fields `update` accepts: `title`, `description`, `status`, `priority`, `assignee`, `due_date` (`YYYY-MM-DD`), `tags` (array of strings), `deliverable`, `review_feedback`, `blocked_reason`, `sort_order`. Anything else is ignored; a request with none of them is rejected. Text fields are trimmed and an empty string is stored as null.
 
 ## Comments
 
 | Action | Body | Notes |
 |---|---|---|
 | `list-comments` | `id` (task id) | Oldest first. |
-| `add-comment` | `id` (task id), `data: { body, author? }` | `author` defaults to `Mervbot`. |
+| `add-comment` | `id` (task id), `data: { body, author? }` | `author` defaults to the key's agent. |
 
 ## Projects
 

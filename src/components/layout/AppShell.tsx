@@ -1,6 +1,5 @@
 import { ReactNode, useState, createContext, useContext } from "react";
 import { AppSidebar } from "./AppSidebar";
-import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface AppShellContextType {
   openMobileMenu: () => void;
@@ -27,7 +26,6 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  useRealtimeSync();
 
   const openMobileMenu = () => setMobileOpen(true);
 

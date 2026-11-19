@@ -1,57 +1,24 @@
-import { supabase } from "@/integrations/supabase/client";
+import { api, ApiError } from "@/lib/api";
 import { Project } from "@/types";
 
 export const projectsRepo = {
-  async list(): Promise<Project[]> {
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return data as Project[];
-  },
+  list: () => api<Project[]>("/projects"),
 
   async getById(id: string): Promise<Project | null> {
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data as Project | null;
+    try {
+      return await api<Project>(`/projects/${id}`);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
   },
 
-  async create(name: string): Promise<Project> {
-    const { data, error } = await supabase
-      .from("projects")
-      .insert({ name })
-      .select()
-      .single();
+  create: (name: string) => api<Project>("/projects", { method: "POST", body: { name } }),
 
-    if (error) throw error;
-    return data as Project;
-  },
-
-  async update(id: string, updates: Partial<Pick<Project, "name">>): Promise<Project> {
-    const { data, error } = await supabase
-      .from("projects")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as Project;
-  },
+  update: (id: string, updates: Partial<Pick<Project, "name">>) =>
+    api<Project>(`/projects/${id}`, { method: "PATCH", body: updates }),
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
+    await api(`/projects/${id}`, { method: "DELETE" });
   },
 };
