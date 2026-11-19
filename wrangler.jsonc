@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pure-task-slate",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-09-01",
+  // The built React app. Unknown paths fall back to index.html so client-side
+  // routes work; /api/* always goes to the Worker.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pure-task-slate",
+      "database_id": "d4ec18da-3730-45c2-b2ef-9e503ee7a2ca",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}

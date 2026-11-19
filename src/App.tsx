@@ -6,14 +6,24 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Login from "./pages/Login";
 import { useAuth } from "./hooks/useAuth";
+import { ApiError } from "./lib/api";
 
 // Pages load on demand so the sign-in screen stays light.
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Projects = lazy(() => import("./pages/Projects"));
 const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // A "not signed in" or "not found" answer won't change on a retry.
+      retry: (failureCount, error) =>
+        !(error instanceof ApiError && error.status < 500) && failureCount < 2,
+    },
+  },
+});
 
 function FullScreenMessage({ children }: { children: React.ReactNode }) {
   return (
@@ -52,6 +62,7 @@ const App = () => (
               <Route path="/" element={<AuthGate><Dashboard /></AuthGate>} />
               <Route path="/projects" element={<AuthGate><Projects /></AuthGate>} />
               <Route path="/projects/:projectId" element={<AuthGate><ProjectDetail /></AuthGate>} />
+              <Route path="/settings" element={<AuthGate><Settings /></AuthGate>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

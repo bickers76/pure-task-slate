@@ -13,19 +13,15 @@ interface TaskCommentsProps {
 
 /** Conversation on a task between the owner and the bot. */
 export function TaskComments({ taskId }: TaskCommentsProps) {
-  const { data: comments = [], isLoading, isError } = useTaskComments(taskId);
+  const { data: comments = [], isLoading } = useTaskComments(taskId);
   const addComment = useAddComment(taskId);
   const [body, setBody] = useState("");
-
-  // The comments table ships in a migration; stay out of the way until it exists.
-  if (isError) return null;
 
   const submit = async () => {
     const trimmed = body.trim();
     if (!trimmed) return;
     try {
-      // The signed-in person is the human on the board; the bot posts through task-api.
-      await addComment.mutateAsync({ author: "Wayne", body: trimmed });
+      await addComment.mutateAsync(trimmed);
       setBody("");
     } catch {
       toast.error("Failed to add comment");

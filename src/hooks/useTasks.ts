@@ -3,10 +3,17 @@ import { tasksRepo, CreateTaskInput, UpdateTaskInput } from "@/lib/repositories/
 import { Task } from "@/types";
 import { OrderUpdate } from "@/lib/taskOrder";
 
+/**
+ * How often open boards re-read from the server, so changes made by the bot
+ * or in another tab show up without a manual refresh.
+ */
+export const LIVE_REFRESH_MS = 10_000;
+
 export function useTasks() {
   return useQuery({
     queryKey: ["tasks"],
     queryFn: () => tasksRepo.listAll(),
+    refetchInterval: LIVE_REFRESH_MS,
   });
 }
 
@@ -15,6 +22,7 @@ export function useProjectTasks(projectId: string | undefined) {
     queryKey: ["tasks", "project", projectId],
     queryFn: () => (projectId ? tasksRepo.listByProject(projectId) : []),
     enabled: !!projectId,
+    refetchInterval: LIVE_REFRESH_MS,
   });
 }
 

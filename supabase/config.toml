@@ -1,4 +1,0 @@
-project_id = "hsiquixmqiypzfngmtpz"
-
-[functions.task-api]
-verify_jwt = false
